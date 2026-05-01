@@ -10,7 +10,7 @@
 
 ## Phases
 
-- [ ] **Phase 1: Temel Altyapı** — Next.js 15 + Supabase (Frankfurt) + Clerk multi-tenant auth, RLS, KVKK baseline
+- [~] **Phase 1: Temel Altyapı** — Next.js 15 + Supabase (Frankfurt) + Clerk multi-tenant auth, RLS, KVKK baseline (1/4 plans complete)
 - [ ] **Phase 2: Hasta Yönetimi** — Patient profile CRUD, search, session shell, history view
 - [ ] **Phase 3: Ses Boru Hattı** — Browser mic → Whisper API (Turkish) → real-time transcript, Safari/Chrome compat
 - [ ] **Phase 4: Anamnez Motoru** — Admin form template UI + GPT-4o transcript→form mapping, missing-info alerts, KVKK/consent gates
