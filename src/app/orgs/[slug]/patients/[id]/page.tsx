@@ -1,10 +1,13 @@
-import { notFound } from 'next/navigation'
-import { cookies } from 'next/headers'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
+import { auth } from '@clerk/nextjs/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { maskTc } from '@/lib/patients/types'
 import PatientProfileHeader from '@/components/patients/PatientProfileHeader'
 import SessionHistoryTable from '@/components/patients/SessionHistoryTable'
 import { Separator } from '@/components/ui/separator'
-import type { PatientResponse } from '@/lib/patients/types'
+import type { SessionSummary } from '@/lib/patients/types'
 
 export default async function PatientProfilePage({
   params,
@@ -13,23 +16,46 @@ export default async function PatientProfilePage({
 }) {
   const { slug, id } = await params
 
-  // Fetch patient data server-side (auth cookie forwarded automatically in same-origin fetch)
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const cookieStore = await cookies()
-  const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
+  // Verify caller's active org matches the URL slug
+  const { userId, orgId } = await auth()
+  if (!userId || !orgId) redirect('/sign-in')
 
-  const res = await fetch(`${baseUrl}/api/orgs/${slug}/patients/${id}`, {
-    headers: { Cookie: cookieHeader },
-    cache: 'no-store',
-  })
+  const { data: tenant } = await supabaseAdmin
+    .from('tenants')
+    .select('id, clerk_org_id')
+    .eq('slug', slug)
+    .single()
 
-  if (res.status === 404) notFound()
-  if (!res.ok) notFound()
+  if (!tenant || tenant.clerk_org_id !== orgId) notFound()
 
-  const patient: PatientResponse = await res.json()
+  // Direct DB query — no HTTP self-fetch, no raw cookie forwarding
+  const supabase = await createSupabaseServerClient()
+  const { data: patient, error } = await supabase
+    .from('patients')
+    .select(`
+      id,
+      full_name,
+      tc_kimlik_no,
+      created_at,
+      sessions (
+        id,
+        form_type,
+        status,
+        started_at,
+        completed_at
+      )
+    `)
+    .eq('id', id)
+    .eq('tenant_id', tenant.id)
+    .single()
 
-  // Session count for badge
-  const sessionCount = patient.sessions.length
+  if (error || !patient) notFound()
+
+  // Sort sessions: most recent first
+  const sessions: SessionSummary[] = ((patient.sessions as SessionSummary[] | null) ?? [])
+    .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())
+
+  const sessionCount = sessions.length
 
   return (
     <div className="p-6 space-y-4">
@@ -47,7 +73,7 @@ export default async function PatientProfilePage({
       {/* Patient header card */}
       <PatientProfileHeader
         fullName={patient.full_name}
-        tcMasked={patient.tc_kimlik_no_masked}
+        tcMasked={maskTc(patient.tc_kimlik_no)}
         slug={slug}
         patientId={patient.id}
       />
@@ -63,7 +89,7 @@ export default async function PatientProfilePage({
       </div>
 
       {/* Session history table */}
-      <SessionHistoryTable sessions={patient.sessions} slug={slug} />
+      <SessionHistoryTable sessions={sessions} slug={slug} />
     </div>
   )
 }
