@@ -21,9 +21,9 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 ## Current Position
 
 **Phase:** 1 — Temel Altyapı
-**Plan:** 01-03 (next — Clerk middleware + auth pages)
+**Plan:** 01-04 (next — Supabase server client + role helpers + auth tests)
 **Status:** In Progress
-**Progress:** [=------] 1/7 phases (Plan 2 of 4 complete in Phase 1)
+**Progress:** [=------] 1/7 phases (Plan 3 of 4 complete in Phase 1)
 
 ## Performance Metrics
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 |--------|-------|
 | v1 Requirements | 56 |
 | Phases | 7 |
-| Plans complete | 2 |
+| Plans complete | 3 |
 | Phases complete | 0 |
 | Duration (01-01) | ~13 minutes |
 
@@ -44,6 +44,11 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 - Blank ≠ zero for perio chart (NULL = no problem recorded)
 - KVKK compliance required from Phase 1
 - Supabase region: Frankfurt (EU data residency for KVKK)
+
+### Decisions from Plan 01-03
+- sessionClaims.metadata typed as Record<string, unknown> via cast — Clerk v6 types metadata as {} requiring runtime cast
+- Clerk webhook (CLERK_WEBHOOK_SECRET) configuration deferred to post-deploy — route implemented and ready
+- session.created confirmed as correct Clerk webhook event for login detection
 
 ### Decisions from Plan 01-02
 - tenants table has no user-facing RLS policies — service_role only; anon key returns 0 rows (T-02-01)
@@ -68,7 +73,7 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 None.
 
 ### Todos
-- Execute 01-03-PLAN.md (Clerk middleware + auth pages)
+- Execute 01-04-PLAN.md (Supabase server client integration, role helpers, auth tests)
 
 ## Session Continuity
 
@@ -77,6 +82,7 @@ None.
 - Phase 1 Plan 1 complete: 2026-05-01 (commit e262049)
 - Phase 1 Plan 2 Task 1 complete: 2026-05-02 (commit 68bc479) — migration files created
 - Phase 1 Plan 2 complete: 2026-05-02 — migrations applied to Frankfurt (aihfqulgdwekvxyeeofl), "Remote database is up to date."
+- Phase 1 Plan 3 complete: 2026-05-02 — middleware (subdomain routing, org activation, superadmin guard), tenant+superadmin layout guards (CVE-2025-29927), Clerk webhook (login audit log)
 - Next.js 15.2.4 scaffold with shadcn/ui, Clerk, Supabase pattern established
 - shadcn/ui uses @base-ui/react primitives (not @radix-ui) — future component authors must use @base-ui imports
 - .env.local has real credentials; Supabase project ref: aihfqulgdwekvxyeeofl
@@ -84,4 +90,4 @@ None.
 
 ## Next Action
 
-Execute Plan 01-03: Clerk middleware + auth pages (sign-in, sign-up, organization setup).
+Execute Plan 01-04: Supabase server client integration, role helpers, auth tests.
