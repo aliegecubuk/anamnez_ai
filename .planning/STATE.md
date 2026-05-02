@@ -11,7 +11,7 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 | # | Phase | Status |
 |---|-------|--------|
 | 1 | Temel Altyapı | Complete |
-| 2 | Hasta Yönetimi | Not Started |
+| 2 | Hasta Yönetimi | Ready to Execute |
 | 3 | Ses Boru Hattı | Not Started |
 | 4 | Anamnez Motoru | Not Started |
 | 5 | Dental AI Açıklamaları | Not Started |
@@ -21,9 +21,9 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 ## Current Position
 
 **Phase:** 2 — Hasta Yönetimi
-**Plan:** 02-01 (next — Phase 2 planning)
-**Status:** In Progress
-**Progress:** [=------] 1/7 phases (Phase 1 complete — 4/4 plans)
+**Plan:** 02-01 (next)
+**Status:** Ready to Execute
+**Progress:** [=------] 1/7 phases (Phase 1 complete — Phase 2 planned 4/4 plans)
 
 ## Performance Metrics
 
@@ -78,7 +78,7 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 None.
 
 ### Todos
-- Plan Phase 2: Hasta Yönetimi (patient profile CRUD, search, session shell)
+- Execute Phase 2: Hasta Yönetimi — 4 plans ready (02-01 → 02-02 → 02-03‖02-04)
 
 ## Session Continuity
 
@@ -97,4 +97,4 @@ None.
 
 ## Next Action
 
-Plan Phase 2: Hasta Yönetimi — patient profile CRUD, search, session shell, history view. Run `/gsd-plan-phase 2`.
+Execute Phase 2: Hasta Yönetimi — 4 plans ready, Wave 1→2→3 (02-03 ‖ 02-04 parallel). Run `/gsd-execute-phase 2`.
