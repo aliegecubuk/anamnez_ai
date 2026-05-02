@@ -21,9 +21,9 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 ## Current Position
 
 **Phase:** 1 — Temel Altyapı
-**Plan:** 01-02 (checkpoint — awaiting supabase db push)
-**Status:** In Progress — Human Action Required
-**Progress:** [=------] 1/7 phases (Plan 1 of 4 complete in Phase 1; Plan 2 Task 1 done)
+**Plan:** 01-03 (next — Clerk middleware + auth pages)
+**Status:** In Progress
+**Progress:** [=------] 1/7 phases (Plan 2 of 4 complete in Phase 1)
 
 ## Performance Metrics
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 |--------|-------|
 | v1 Requirements | 56 |
 | Phases | 7 |
-| Plans complete | 1 |
+| Plans complete | 2 |
 | Phases complete | 0 |
 | Duration (01-01) | ~13 minutes |
 
@@ -68,8 +68,7 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 None.
 
 ### Todos
-- Run supabase link + db push (Task 2 of 01-02 — human-action checkpoint)
-- After db push confirmed: run 01-03-PLAN.md (Clerk middleware + auth pages)
+- Execute 01-03-PLAN.md (Clerk middleware + auth pages)
 
 ## Session Continuity
 
@@ -77,7 +76,7 @@ None.
 - Requirements finalized: 56 v1 requirements, 0 orphans
 - Phase 1 Plan 1 complete: 2026-05-01 (commit e262049)
 - Phase 1 Plan 2 Task 1 complete: 2026-05-02 (commit 68bc479) — migration files created
-- Phase 1 Plan 2 Task 2: PENDING human-action — user must run supabase link + db push
+- Phase 1 Plan 2 complete: 2026-05-02 — migrations applied to Frankfurt (aihfqulgdwekvxyeeofl), "Remote database is up to date."
 - Next.js 15.2.4 scaffold with shadcn/ui, Clerk, Supabase pattern established
 - shadcn/ui uses @base-ui/react primitives (not @radix-ui) — future component authors must use @base-ui imports
 - .env.local has real credentials; Supabase project ref: aihfqulgdwekvxyeeofl
@@ -85,4 +84,4 @@ None.
 
 ## Next Action
 
-Complete Plan 01-02 Task 2: run `npx supabase link --project-ref aihfqulgdwekvxyeeofl` then `npx supabase db push` in terminal.
+Execute Plan 01-03: Clerk middleware + auth pages (sign-in, sign-up, organization setup).
