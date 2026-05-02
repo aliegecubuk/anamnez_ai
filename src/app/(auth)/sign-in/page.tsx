@@ -37,7 +37,9 @@ export default function SignInPage() {
       })
 
       if (result.status === 'complete') {
-        router.push('/dashboard')
+        // /dashboard does not exist — let root page.tsx dispatch to the correct route
+        // based on the user's role and active organisation
+        router.push('/')
       }
     } catch (err: unknown) {
       const clerkError = err as { errors?: Array<{ code: string }> }
