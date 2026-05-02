@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'anamnezal.com'
 
-const isPublicRoute = createRouteMatcher(['/sign-in(.*)'])
+const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/reset-password(.*)'])
 const isSuperadminRoute = createRouteMatcher(['/superadmin(.*)'])
 
 export default clerkMiddleware(
@@ -18,6 +18,10 @@ export default clerkMiddleware(
     const isTenantSubdomain = slug !== ROOT_DOMAIN && slug !== 'www' && slug !== ''
 
     if (isTenantSubdomain) {
+      // Enforce auth before rewriting — prevents unauthenticated access to tenant routes
+      if (!isPublicRoute(req)) {
+        await auth.protect()
+      }
       // Rewrite to /orgs/[slug]/... so organizationSyncOptions activates the org
       const newPath = `/orgs/${slug}${url.pathname}`
       const rewriteUrl = new URL(newPath, req.url)
