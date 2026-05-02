@@ -4,7 +4,7 @@
 **Milestone:** v1
 **Granularity:** Standard
 **Coverage:** 55/55 v1 requirements mapped ✓
-**Last updated:** 2026-05-01
+**Last updated:** 2026-05-02
 
 ---
 
@@ -45,7 +45,12 @@
   3. Patient profile lists all past sessions with date and form type
   4. Dentist can open and read any past session in full
   5. Dentist can select a patient and start a new session from their profile
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 02-01-PLAN.md — Supabase migration: patients + sessions tables with RLS
+- [ ] 02-02-PLAN.md — API routes: list/search patients, create patient, patient profile + sessions
+- [ ] 02-03-PLAN.md — Patient list UI: search table + create patient dialog (Screen 1 + Screen 2)
+- [ ] 02-04-PLAN.md — Patient profile UI: header card + session history table (Screen 3)
 **UI hint**: yes
 
 ### Phase 3: Ses Boru Hattı
@@ -125,7 +130,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Temel Altyapı | 4/4 | Complete | 2026-05-02 |
-| 2. Hasta Yönetimi | 0/? | Not started | - |
+| 2. Hasta Yönetimi | 0/4 | In Progress | - |
 | 3. Ses Boru Hattı | 0/? | Not started | - |
 | 4. Anamnez Motoru | 0/? | Not started | - |
 | 5. Dental AI Açıklamaları | 0/? | Not started | - |
@@ -145,11 +150,11 @@
 | AUTH-05 | Phase 1 | Complete (01-03, 01-04) |
 | AUTH-06 | Phase 1 | Complete (01-04) |
 | AUTH-07 | Phase 1 | Complete (01-02, 01-03) |
-| PAT-01 | Phase 2 | Pending |
-| PAT-02 | Phase 2 | Pending |
-| PAT-03 | Phase 2 | Pending |
-| PAT-04 | Phase 2 | Pending |
-| PAT-05 | Phase 2 | Pending |
+| PAT-01 | Phase 2 | Planned (02-01, 02-02, 02-03) |
+| PAT-02 | Phase 2 | Planned (02-01, 02-02, 02-03) |
+| PAT-03 | Phase 2 | Planned (02-01, 02-02, 02-04) |
+| PAT-04 | Phase 2 | Planned (02-01, 02-02, 02-04) |
+| PAT-05 | Phase 2 | Planned (02-01, 02-02, 02-04) |
 | STT-01 | Phase 3 | Pending |
 | STT-02 | Phase 3 | Pending |
 | STT-03 | Phase 3 | Pending |
@@ -198,3 +203,4 @@
 
 ---
 *Roadmap created: 2026-05-01*
+*Last updated: 2026-05-02 — Phase 2 plans finalized (4 plans)*
