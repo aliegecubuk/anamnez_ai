@@ -10,7 +10,7 @@
 
 ## Phases
 
-- [~] **Phase 1: Temel Altyapı** — Next.js 15 + Supabase (Frankfurt) + Clerk multi-tenant auth, RLS, KVKK baseline (3/4 plans complete)
+- [x] **Phase 1: Temel Altyapı** — Next.js 15 + Supabase (Frankfurt) + Clerk multi-tenant auth, RLS, KVKK baseline (4/4 plans complete)
 - [ ] **Phase 2: Hasta Yönetimi** — Patient profile CRUD, search, session shell, history view
 - [ ] **Phase 3: Ses Boru Hattı** — Browser mic → Whisper API (Turkish) → real-time transcript, Safari/Chrome compat
 - [ ] **Phase 4: Anamnez Motoru** — Admin form template UI + GPT-4o transcript→form mapping, missing-info alerts, KVKK/consent gates
@@ -124,7 +124,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Temel Altyapı | 3/4 | In Progress | - |
+| 1. Temel Altyapı | 4/4 | Complete | 2026-05-02 |
 | 2. Hasta Yönetimi | 0/? | Not started | - |
 | 3. Ses Boru Hattı | 0/? | Not started | - |
 | 4. Anamnez Motoru | 0/? | Not started | - |
@@ -141,9 +141,9 @@
 | AUTH-01 | Phase 1 | Pending |
 | AUTH-02 | Phase 1 | Pending |
 | AUTH-03 | Phase 1 | Complete (01-03) |
-| AUTH-04 | Phase 1 | Complete (01-03) |
-| AUTH-05 | Phase 1 | Complete (01-03) |
-| AUTH-06 | Phase 1 | Pending |
+| AUTH-04 | Phase 1 | Complete (01-03, 01-04) |
+| AUTH-05 | Phase 1 | Complete (01-03, 01-04) |
+| AUTH-06 | Phase 1 | Complete (01-04) |
 | AUTH-07 | Phase 1 | Complete (01-02, 01-03) |
 | PAT-01 | Phase 2 | Pending |
 | PAT-02 | Phase 2 | Pending |

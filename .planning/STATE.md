@@ -10,7 +10,7 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | Temel Altyapı | In Progress |
+| 1 | Temel Altyapı | Complete |
 | 2 | Hasta Yönetimi | Not Started |
 | 3 | Ses Boru Hattı | Not Started |
 | 4 | Anamnez Motoru | Not Started |
@@ -20,10 +20,10 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 
 ## Current Position
 
-**Phase:** 1 — Temel Altyapı
-**Plan:** 01-04 (next — Supabase server client + role helpers + auth tests)
+**Phase:** 2 — Hasta Yönetimi
+**Plan:** 02-01 (next — Phase 2 planning)
 **Status:** In Progress
-**Progress:** [=------] 1/7 phases (Plan 3 of 4 complete in Phase 1)
+**Progress:** [=------] 1/7 phases (Phase 1 complete — 4/4 plans)
 
 ## Performance Metrics
 
@@ -31,8 +31,8 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 |--------|-------|
 | v1 Requirements | 56 |
 | Phases | 7 |
-| Plans complete | 3 |
-| Phases complete | 0 |
+| Plans complete | 4 |
+| Phases complete | 1 |
 | Duration (01-01) | ~13 minutes |
 
 ## Accumulated Context
@@ -44,6 +44,11 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 - Blank ≠ zero for perio chart (NULL = no problem recorded)
 - KVKK compliance required from Phase 1
 - Supabase region: Frankfurt (EU data residency for KVKK)
+
+### Decisions from Plan 01-04
+- reset_password_email_code is the correct Clerk strategy for password reset — sends code via email, Clerk hosted page handles actual change
+- CardFooter in base-nova shadcn has border-t + bg-muted/50 by default — suppress with border-t-0 bg-transparent for login/auth pages
+- Auth routes live under src/app/(auth)/ route group — all unauthenticated pages inherit centered layout from (auth)/layout.tsx
 
 ### Decisions from Plan 01-03
 - sessionClaims.metadata typed as Record<string, unknown> via cast — Clerk v6 types metadata as {} requiring runtime cast
@@ -73,7 +78,7 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 None.
 
 ### Todos
-- Execute 01-04-PLAN.md (Supabase server client integration, role helpers, auth tests)
+- Plan Phase 2: Hasta Yönetimi (patient profile CRUD, search, session shell)
 
 ## Session Continuity
 
@@ -83,6 +88,8 @@ None.
 - Phase 1 Plan 2 Task 1 complete: 2026-05-02 (commit 68bc479) — migration files created
 - Phase 1 Plan 2 complete: 2026-05-02 — migrations applied to Frankfurt (aihfqulgdwekvxyeeofl), "Remote database is up to date."
 - Phase 1 Plan 3 complete: 2026-05-02 — middleware (subdomain routing, org activation, superadmin guard), tenant+superadmin layout guards (CVE-2025-29927), Clerk webhook (login audit log)
+- Phase 1 Plan 4 complete: 2026-05-02 — login UI (/sign-in), password reset (/reset-password), root redirect, auth layout
+- Phase 1 COMPLETE: 2026-05-02 — all 4 plans executed
 - Next.js 15.2.4 scaffold with shadcn/ui, Clerk, Supabase pattern established
 - shadcn/ui uses @base-ui/react primitives (not @radix-ui) — future component authors must use @base-ui imports
 - .env.local has real credentials; Supabase project ref: aihfqulgdwekvxyeeofl
@@ -90,4 +97,4 @@ None.
 
 ## Next Action
 
-Execute Plan 01-04: Supabase server client integration, role helpers, auth tests.
+Plan Phase 2: Hasta Yönetimi — patient profile CRUD, search, session shell, history view. Run `/gsd-plan-phase 2`.
