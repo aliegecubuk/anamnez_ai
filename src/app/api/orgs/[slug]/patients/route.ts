@@ -48,6 +48,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       tc_kimlik_no,
       sessions ( started_at )
     `)
+    .eq('tenant_id', access.tenantId)   // application-layer tenant filter (defense-in-depth)
     .order('full_name', { ascending: true })
 
   if (q) {
@@ -61,7 +62,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 
   const { data, error } = await query
   if (error) {
-    console.error('[patients GET]', error)
+    console.error('[patients GET]', { code: error.code, message: error.message })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         { status: 409 }
       )
     }
-    console.error('[patients POST]', error)
+    console.error('[patients POST]', { code: error.code, message: error.message })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 
