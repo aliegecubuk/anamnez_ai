@@ -11,6 +11,9 @@ export async function createSupabaseServerClient() {
       global: {
         fetch: async (url, options = {}) => {
           const clerkToken = await getToken()
+          if (!clerkToken) {
+            throw new Error('No Clerk session token — user is not authenticated')
+          }
           const headers = new Headers(options?.headers)
           headers.set('Authorization', `Bearer ${clerkToken}`)
           return fetch(url, { ...options, headers })
