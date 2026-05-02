@@ -52,6 +52,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
       )
     `)
     .eq('id', id)
+    .eq('tenant_id', access.tenantId)   // application-layer tenant filter (defense-in-depth)
     .single()
 
   if (error || !patient) {
