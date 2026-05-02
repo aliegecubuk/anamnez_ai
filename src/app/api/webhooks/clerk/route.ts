@@ -39,11 +39,15 @@ export async function POST(req: Request) {
     const session_id = data.id as string
     const clerk_org_id = (data.last_active_organization_id as string) ?? null
 
+    // Extract client IP from Clerk event payload (x-forwarded-for is Svix's IP, not the user's)
+    const ip_address =
+      (data.request_data as Record<string, unknown>)?.remote_addr as string ?? null
+
     const { error } = await supabaseAdmin.from('login_audit_log').insert({
       user_id,
       session_id,
       clerk_org_id,
-      ip_address: headerPayload.get('x-forwarded-for') ?? null,
+      ip_address,
       user_agent: headerPayload.get('user-agent') ?? null,
       logged_in_at: new Date().toISOString(),
     })
