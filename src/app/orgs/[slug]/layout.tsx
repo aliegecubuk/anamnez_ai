@@ -10,7 +10,8 @@ export default async function TenantLayout({
 }) {
   // Server-side auth check — do NOT rely solely on middleware (CVE-2025-29927)
   const { userId, orgId } = await auth()
-  const { slug } = await params
+  // params awaited to satisfy Next.js 15 async params requirement
+  await params
 
   if (!userId) {
     redirect('/sign-in')

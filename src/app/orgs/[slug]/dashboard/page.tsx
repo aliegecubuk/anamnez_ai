@@ -1,16 +1,9 @@
-import { auth } from '@clerk/nextjs/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
-export default async function DashboardPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
-  const { userId, orgId } = await auth()
-  const { slug } = await params
-
+// Dashboard page for a tenant org. params.slug used in future for tenant-specific queries.
+export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient()
-  const { data: tenantData, error } = await supabase
+  const { data: tenantData } = await supabase
     .from('tenants')
     .select('name, slug')
     .single()
