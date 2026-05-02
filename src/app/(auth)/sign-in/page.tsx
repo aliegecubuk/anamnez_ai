@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/card'
 
 export default function SignInPage() {
-  const { signIn, isLoaded } = useSignIn()
+  const { signIn, setActive, isLoaded } = useSignIn()
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -37,8 +37,7 @@ export default function SignInPage() {
       })
 
       if (result.status === 'complete') {
-        // /dashboard does not exist — let root page.tsx dispatch to the correct route
-        // based on the user's role and active organisation
+        await setActive!({ session: result.createdSessionId })
         router.push('/')
       }
     } catch (err: unknown) {
