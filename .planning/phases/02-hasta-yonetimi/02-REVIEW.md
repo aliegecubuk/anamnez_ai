@@ -18,7 +18,7 @@ findings:
   warning: 5
   info: 3
   total: 11
-status: issues_found
+status: partial_resolved
 ---
 
 # Phase 02: Code Review Report
@@ -38,7 +38,7 @@ Three critical defects found. Two are IDOR vulnerabilities: both API endpoints q
 
 ## Critical Issues
 
-### CR-01: IDOR — Patient List Query Missing tenant_id Filter
+### CR-01: IDOR — Patient List Query Missing tenant_id Filter ✓ RESOLVED (commit 3588996)
 
 **File:** `src/app/api/orgs/[slug]/patients/route.ts:43-62`
 
@@ -62,7 +62,7 @@ let query = supabase
 
 ---
 
-### CR-02: IDOR — Patient Detail Query Missing tenant_id Filter
+### CR-02: IDOR — Patient Detail Query Missing tenant_id Filter ✓ RESOLVED (commit 271ab3d)
 
 **File:** `src/app/api/orgs/[slug]/patients/[id]/route.ts:39-55`
 
@@ -92,7 +92,7 @@ const { data: patient, error } = await supabase
 
 ---
 
-### CR-03: Self-Fetch With Raw Cookie Header Forwarding
+### CR-03: Self-Fetch With Raw Cookie Header Forwarding ✓ RESOLVED (commit 76edbb0)
 
 **File:** `src/app/orgs/[slug]/patients/[id]/page.tsx:17-24`
 
@@ -143,7 +143,7 @@ if (error || !patient) notFound()
 
 ## Warnings
 
-### WR-01: console.error May Log Raw Supabase Error Containing TC Kimlik No Context
+### WR-01: console.error May Log Raw Supabase Error Containing TC Kimlik No Context ✓ RESOLVED (commit 3588996)
 
 **File:** `src/app/api/orgs/[slug]/patients/route.ts:64,143`
 
