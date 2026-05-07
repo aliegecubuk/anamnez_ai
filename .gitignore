@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# editor / agent local config
+.claude/
+
+# windows shell artifacts (stderr leaks into literal "nul" file)
+/nul
