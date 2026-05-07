@@ -7,7 +7,6 @@ import type { SessionSummary } from '@/lib/patients/types'
 
 interface Props {
   sessions: SessionSummary[]
-  slug: string
 }
 
 // Format date: ISO string → "dd.MM.yyyy HH:mm" in tr-TR locale
@@ -64,7 +63,7 @@ function StatusBadge({ status }: { status: SessionSummary['status'] }) {
   return <Badge variant="outline">Taslak</Badge>
 }
 
-export default function SessionHistoryTable({ sessions, slug }: Props) {
+export default function SessionHistoryTable({ sessions }: Props) {
   if (sessions.length === 0) {
     return (
       <div className="py-12 flex flex-col items-center gap-3 text-center">

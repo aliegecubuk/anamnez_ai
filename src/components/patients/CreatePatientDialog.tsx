@@ -19,7 +19,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { PatientListItem } from '@/lib/patients/types'
 
-// Zod schema matching UI-SPEC validation rules exactly
 const schema = z.object({
   full_name: z.string().trim().min(1, 'Ad soyad zorunludur.').max(100),
   tc_kimlik_no: z
@@ -35,16 +34,10 @@ type FormValues = z.infer<typeof schema>
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  slug: string
   onSuccess: (patient: PatientListItem) => void
 }
 
-export default function CreatePatientDialog({
-  open,
-  onOpenChange,
-  slug,
-  onSuccess,
-}: Props) {
+export default function CreatePatientDialog({ open, onOpenChange, onSuccess }: Props) {
   const [serverError, setServerError] = useState<string | null>(null)
 
   const {
@@ -59,7 +52,7 @@ export default function CreatePatientDialog({
 
   const onSubmit = async (values: FormValues) => {
     setServerError(null)
-    const res = await fetch(`/api/orgs/${slug}/patients`, {
+    const res = await fetch('/api/patients', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(values),
@@ -73,9 +66,7 @@ export default function CreatePatientDialog({
     } else {
       const body = await res.json().catch(() => ({}))
       if (res.status === 409) {
-        setServerError(
-          body.error ?? 'Bu TC kimlik numarasıyla kayıtlı bir hasta zaten var.'
-        )
+        setServerError(body.error ?? 'Bu TC kimlik numarasıyla kayıtlı bir hasta zaten var.')
       } else {
         toast.error('Hasta oluşturulamadı. Lütfen tekrar deneyin.')
       }
@@ -101,7 +92,6 @@ export default function CreatePatientDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
-          {/* Ad Soyad */}
           <div className="space-y-1.5">
             <Label htmlFor="full_name">Ad Soyad</Label>
             <Input
@@ -111,13 +101,10 @@ export default function CreatePatientDialog({
               {...register('full_name')}
             />
             {errors.full_name && (
-              <p className="text-sm text-destructive">
-                {errors.full_name.message}
-              </p>
+              <p className="text-sm text-destructive">{errors.full_name.message}</p>
             )}
           </div>
 
-          {/* TC Kimlik No */}
           <div className="space-y-1.5">
             <Label htmlFor="tc_kimlik_no">TC Kimlik No</Label>
             <Input
@@ -130,16 +117,10 @@ export default function CreatePatientDialog({
               className="font-mono"
               {...register('tc_kimlik_no')}
             />
-            {/* Length counter: X/11 */}
-            <p className="text-sm text-muted-foreground text-right">
-              {tcValue.length}/11
-            </p>
+            <p className="text-sm text-muted-foreground text-right">{tcValue.length}/11</p>
             {errors.tc_kimlik_no && (
-              <p className="text-sm text-destructive">
-                {errors.tc_kimlik_no.message}
-              </p>
+              <p className="text-sm text-destructive">{errors.tc_kimlik_no.message}</p>
             )}
-            {/* Server-side duplicate error */}
             {serverError && (
               <p className="text-sm text-destructive">{serverError}</p>
             )}

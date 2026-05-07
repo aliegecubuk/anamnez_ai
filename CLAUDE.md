@@ -7,7 +7,21 @@ Voice → Whisper STT → GPT-4o form fill + FDI tooth charts. Cross-contaminati
 
 See `.planning/PROJECT.md` for full context.
 
-## GSD Workflow
+## Test Mode (active 2026-05-07)
+
+**Pivoted to flat single-user.** Multi-tenant orgs deferred until post-validation.
+
+- Open registration: anyone signs up via `/sign-up`, creates patients immediately.
+- Each user sees only their own patients (RLS via `user_id = auth.jwt() ->> 'sub'`).
+- No Clerk Organizations. No subdomain routing. No tenants table.
+- Forward-compat: `clinic_id` nullable column reserved on patients/sessions for future grouping.
+- See `.planning/pivot/PIVOT-PLAN.md` for full pivot scope.
+
+Routes: `/dashboard`, `/patients`, `/patients/[id]`. APIs: `/api/patients/*`. Superadmin retained at `/superadmin` (user list + login audit + role assign).
+
+**Workflow ekol:** ARAŞTIR → PLANLA → EXECUTE → REVIEW → NEXT. GSD slash-command'ları çağırma — token israfı.
+
+## GSD Workflow (paused — re-enable post-pivot)
 
 This project uses the Get Shit Done (GSD) workflow.
 
@@ -33,6 +47,14 @@ See `.planning/STATE.md` for current phase and next action.
                                                     6a (Perio Chart) ← parallel → 6b (Pathology Chart)
 ```
 
+## Frontend execution standard
+
+For any phase with frontend components (UI pages, components), after `gsd-execute-phase` completes:
+1. Run `/impeccable` — code quality pass on changed files
+2. Run `/frontend-design` — visual/UX audit against UI-SPEC
+
+These two skills are **mandatory** for every frontend phase before `/gsd-verify-work`.
+
 ## Critical constraints
 
 1. **Tooth number accuracy** — 18 ≠ 28. Zero tolerance. Disambiguation modal mandatory for any non-high-confidence tooth mention.
@@ -46,7 +68,7 @@ See `.planning/STATE.md` for current phase and next action.
 |-------|--------|
 | Framework | Next.js 15 App Router |
 | Database | Supabase PostgreSQL (Frankfurt eu-central-1) |
-| Auth | Clerk Organizations |
+| Auth | Clerk (flat users; Organizations deferred) |
 | STT | OpenAI Whisper API (`language: "tr"`) |
 | LLM | GPT-4o Structured Outputs |
 | Hosting | Vercel Pro (fra1 region) |

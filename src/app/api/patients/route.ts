@@ -1,46 +1,20 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { maskTc } from '@/lib/patients/types'
 import type { PatientListItem } from '@/lib/patients/types'
 
-type RouteContext = { params: Promise<{ slug: string }> }
+// Test mode: service-role + app-layer user_id filter.
+// RLS remains as defense-in-depth; switched off the Clerk-JWT bridge for now.
 
-// Helper: verify the caller's active org matches the URL slug
-// Returns { tenantId, orgId } if valid, null otherwise
-async function verifyTenantAccess(slug: string): Promise<{ tenantId: string; orgId: string } | null> {
-  const { userId, orgId } = await auth()
-  if (!userId || !orgId) return null
-
-  const { data: tenant } = await supabaseAdmin
-    .from('tenants')
-    .select('id, clerk_org_id')
-    .eq('slug', slug)
-    .single()
-
-  if (!tenant || tenant.clerk_org_id !== orgId) return null
-  return { tenantId: tenant.id, orgId }
-}
-
-// GET /api/orgs/[slug]/patients?q=
-// Returns: PatientListItem[] sorted by full_name ASC
-export async function GET(req: NextRequest, { params }: RouteContext) {
-  const { slug } = await params
-  const access = await verifyTenantAccess(slug)
-  if (!access) {
-    const { userId } = await auth()
-    return NextResponse.json(
-      { error: userId ? 'Forbidden' : 'Unauthorized' },
-      { status: userId ? 403 : 401 }
-    )
-  }
+// GET /api/patients?q=
+export async function GET(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const q = req.nextUrl.searchParams.get('q')?.trim() ?? ''
-  const supabase = await createSupabaseServerClient()
 
-  // Base query: patients for this tenant with their most recent session date
-  let query = supabase
+  let query = supabaseAdmin
     .from('patients')
     .select(`
       id,
@@ -48,11 +22,10 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       tc_kimlik_no,
       sessions ( started_at )
     `)
-    .eq('tenant_id', access.tenantId)   // application-layer tenant filter (defense-in-depth)
+    .eq('user_id', userId)
     .order('full_name', { ascending: true })
 
   if (q) {
-    // Numeric-only input → TC prefix search; otherwise → name ILIKE search
     if (/^[0-9]+$/.test(q)) {
       query = query.ilike('tc_kimlik_no', `${q}%`)
     } else {
@@ -66,14 +39,9 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 
-  // Shape response: mask TC, compute last_session_at
   const items: PatientListItem[] = (data ?? []).map((p) => {
     const sessionDates = (p.sessions as { started_at: string }[] | null) ?? []
-    const last = sessionDates
-      .map((s) => s.started_at)
-      .sort()
-      .at(-1) ?? null
-
+    const last = sessionDates.map((s) => s.started_at).sort().at(-1) ?? null
     return {
       id: p.id,
       full_name: p.full_name,
@@ -85,26 +53,15 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   return NextResponse.json(items)
 }
 
-// POST /api/orgs/[slug]/patients
-// Body: { full_name: string, tc_kimlik_no: string }
-// Returns 201 PatientListItem on success
-export async function POST(req: NextRequest, { params }: RouteContext) {
-  const { slug } = await params
-  const access = await verifyTenantAccess(slug)
-  if (!access) {
-    const { userId } = await auth()
-    return NextResponse.json(
-      { error: userId ? 'Forbidden' : 'Unauthorized' },
-      { status: userId ? 403 : 401 }
-    )
-  }
-
+// POST /api/patients
+export async function POST(req: NextRequest) {
   const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const body = await req.json().catch(() => ({}))
   const full_name = (body.full_name ?? '').trim()
   const tc_kimlik_no = (body.tc_kimlik_no ?? '').trim()
 
-  // Validation
   if (!full_name) {
     return NextResponse.json({ error: 'Ad soyad zorunludur.' }, { status: 422 })
   }
@@ -120,21 +77,13 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     )
   }
 
-  const supabase = await createSupabaseServerClient()
-
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('patients')
-    .insert({
-      tenant_id: access.tenantId,
-      full_name,
-      tc_kimlik_no,
-      created_by: userId!,
-    })
+    .insert({ user_id: userId, full_name, tc_kimlik_no })
     .select('id, full_name, tc_kimlik_no, created_at')
     .single()
 
   if (error) {
-    // Unique constraint violation: (tenant_id, tc_kimlik_no)
     if (error.code === '23505') {
       return NextResponse.json(
         { error: 'Bu TC kimlik numarasıyla kayıtlı bir hasta zaten var.' },

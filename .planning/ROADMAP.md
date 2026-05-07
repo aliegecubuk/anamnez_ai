@@ -49,7 +49,7 @@
 Plans:
 - [ ] 02-01-PLAN.md — Supabase migration: patients + sessions tables with RLS
 - [ ] 02-02-PLAN.md — API routes: list/search patients, create patient, patient profile + sessions
-- [ ] 02-03-PLAN.md — Patient list UI: search table + create patient dialog (Screen 1 + Screen 2)
+- [ ] 02-03-PLAN.md — Pnt list UI: search table + create patient dialog (Screen 1 + Screen 2)
 - [ ] 02-04-PLAN.md — Patient profile UI: header card + session history table (Screen 3)
 **UI hint**: yes
 

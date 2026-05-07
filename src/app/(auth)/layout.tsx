@@ -4,10 +4,7 @@ export const metadata: Metadata = {
   title: 'AnamnezAl',
 }
 
+// Full-bleed shell — auth pages own their own two-pane layout.
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      {children}
-    </div>
-  )
+  return <div className="min-h-screen bg-background text-foreground">{children}</div>
 }
