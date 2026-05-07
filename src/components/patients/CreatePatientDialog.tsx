@@ -91,7 +91,7 @@ export default function CreatePatientDialog({ open, onOpenChange, onSuccess }: P
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4 py-2">
           <div className="space-y-1.5">
             <Label htmlFor="full_name">Ad Soyad</Label>
             <Input
