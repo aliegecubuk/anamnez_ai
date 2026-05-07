@@ -1,39 +1,16 @@
-import { auth, clerkClient } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export default async function RootPage() {
-  const { userId, sessionClaims } = await auth()
+  // treatPendingAsSignedOut:false so pending sessions still resolve userId,
+  // letting us route them to the task completion page instead of the sign-in page.
+  const { userId, sessionClaims, sessionStatus } = await auth({ treatPendingAsSignedOut: false })
 
-  if (!userId) {
-    redirect('/sign-in')
-  }
+  if (!userId) redirect('/sign-in')
+  if (sessionStatus === 'pending') redirect('/sign-in/tasks')
 
-  // Superadmin → superadmin panel
-  if ((sessionClaims?.metadata as Record<string, unknown>)?.role === 'superadmin') {
-    redirect('/superadmin')
-  }
+  const role = (sessionClaims?.metadata as Record<string, unknown>)?.role
+  if (role === 'superadmin') redirect('/superadmin')
 
-  // Look up user's first org membership and redirect to their tenant dashboard
-  try {
-    const client = await clerkClient()
-    const { data: memberships } = await client.users.getOrganizationMembershipList({ userId: userId! })
-
-    if (memberships.length > 0) {
-      const orgId = memberships[0].organization.id
-      const { data: tenant } = await supabaseAdmin
-        .from('tenants')
-        .select('slug')
-        .eq('clerk_org_id', orgId)
-        .single()
-
-      if (tenant) {
-        redirect(`/orgs/${tenant.slug}/dashboard`)
-      }
-    }
-  } catch {
-    // fall through to sign-in
-  }
-
-  redirect('/sign-in')
+  redirect('/dashboard')
 }

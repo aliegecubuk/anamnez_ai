@@ -1,53 +1,45 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
-const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'anamnezal.com'
-
-const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/reset-password(.*)'])
+const isPublicRoute = createRouteMatcher([
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/reset-password(.*)',
+  '/api/webhooks/(.*)',
+])
+const isTasksRoute = createRouteMatcher(['/sign-in/tasks', '/sign-up/tasks'])
 const isSuperadminRoute = createRouteMatcher(['/superadmin(.*)'])
 
-export default clerkMiddleware(
-  async (auth, req) => {
-    const url = req.nextUrl
-    const hostname = req.headers.get('host') || ''
+export default clerkMiddleware(async (auth, req) => {
+  // treatPendingAsSignedOut: false → pending sessions retain userId so we can
+  // detect them and route to /sign-in/tasks instead of bouncing to /sign-in.
+  const { userId, sessionClaims, sessionStatus } = await auth({ treatPendingAsSignedOut: false })
 
-    // Extract tenant slug from subdomain
-    const slug = hostname
-      .replace(`.${ROOT_DOMAIN}`, '')
-      .replace(`:3000`, '')
-    const isTenantSubdomain = slug !== ROOT_DOMAIN && slug !== 'www' && slug !== ''
-
-    if (isTenantSubdomain) {
-      // Enforce auth before rewriting — prevents unauthenticated access to tenant routes
-      if (!isPublicRoute(req)) {
-        await auth.protect()
-      }
-      // Rewrite to /orgs/[slug]/... so organizationSyncOptions activates the org
-      const newPath = `/orgs/${slug}${url.pathname}`
-      const rewriteUrl = new URL(newPath, req.url)
-      rewriteUrl.search = url.search
-      return NextResponse.rewrite(rewriteUrl)
-    }
-
-    // Superadmin route protection — check publicMetadata.role
-    if (isSuperadminRoute(req)) {
-      const { sessionClaims } = await auth()
-      const metadata = sessionClaims?.metadata as Record<string, unknown> | undefined
-      if (metadata?.role !== 'superadmin') {
-        return NextResponse.redirect(new URL('/sign-in', req.url))
-      }
-    }
-
-    if (!isPublicRoute(req)) {
-      await auth.protect()
-    }
-  },
-  {
-    organizationSyncOptions: {
-      organizationPatterns: ['/orgs/:slug', '/orgs/:slug/(.*)'],
-    },
+  // No user at all → kick to /sign-in (unless route is public).
+  if (!userId) {
+    if (isPublicRoute(req)) return
+    const signInUrl = new URL('/sign-in', req.url)
+    signInUrl.searchParams.set('redirect_url', req.url)
+    return NextResponse.redirect(signInUrl)
   }
-)
+
+  // Pending session (e.g. forced MFA setup or other Clerk task) → force
+  // completion at /sign-in/tasks. Allow tasks route + webhooks + reset-password.
+  if (sessionStatus === 'pending') {
+    if (isTasksRoute(req) || req.nextUrl.pathname.startsWith('/api/webhooks/') || req.nextUrl.pathname.startsWith('/reset-password')) {
+      return
+    }
+    return NextResponse.redirect(new URL('/sign-in/tasks', req.url))
+  }
+
+  // Active session: enforce superadmin role on superadmin routes.
+  if (isSuperadminRoute(req)) {
+    const metadata = sessionClaims?.metadata as Record<string, unknown> | undefined
+    if (metadata?.role !== 'superadmin') {
+      return NextResponse.redirect(new URL('/sign-in', req.url))
+    }
+  }
+})
 
 export const config = {
   matcher: [
