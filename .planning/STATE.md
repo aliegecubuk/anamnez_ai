@@ -2,43 +2,55 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: pivot-stabilizing
-last_updated: "2026-05-07T04:50:00.000Z"
+status: phase-3-planned
+last_updated: "2026-05-08T00:15:00.000Z"
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 8
+  total_plans: 12
   completed_plans: 8
   percent: 28
 ---
 
 # AnamnezAl — Project State
 
-## ⏰ TOMORROW START HERE — 2026-05-08
+## ⏰ NEXT START HERE — 2026-05-08+
 
 **Open this file first.** Then in order:
 
-1. **Verify last night's auth fix landed**
-   - User confirmed: signed in to main account `aliegecubuk99@gmail.com` works after Clerk Dashboard fix (`force_organization_selection: false` set via API).
-   - Run `npm run dev` → cold sign-in test on main account → /dashboard renders.
-   - If broken: read `## Last Session Diagnosis` below.
+1. **Run Phase 3 — STT pipeline**
+   - Plans landed and PASS plan-checker (commits `4e24e0c` + revision `0bb7e93`).
+   - 4 plans, 11 tasks: 03-01 DB migration → 03-02 Server + Whisper → 03-03 Client recorder + UI → 03-04 Wire patient profile + checkpoint.
+   - Run `/gsd-execute-phase 3` (per `feedback_gsd_speed.md` user skips discuss/research → go straight to execute).
+   - Wave 4 ends with a `checkpoint:human-verify` requiring explicit acknowledgement of two architectural deltas:
+     - **SSE-only audio upload via POST multipart** (CLAUDE.md mentioned WebSocket — deviation accepted at planning)
+     - **No mid-recording resume across page reload** (transcript replay survives, MediaRecorder restarts)
+   - Approve with `approved (sse-ok, no-reload-resume-ok)` to mark verified.
 
-2. **Commit the pivot wave + auth fixes**
-   - 28 modified/deleted files uncommitted (`git status` to confirm). All from:
-     - Pivot wave (drop multi-tenant orgs → flat user-scoped) — most files
-     - Tonight's auth loop fixes (middleware, root page, sign-in/sign-up, tasks pages)
-   - Recommended commit split:
-     - `refactor(pivot): drop multi-tenant orgs — flat user-scoped auth + RLS`
-     - `fix(auth): handle pending sessions via /sign-in/tasks dispatcher; add 2FA UI fallback`
-   - Don't commit `.env.example` if it has secrets — review first.
+2. **Phase 3 envs needed before execute**
+   - `OPENAI_API_KEY` set in `.env.local` for Whisper transcription.
+   - `npm install openai` — package not yet in `package.json` (planner confirmed missing).
+   - Apply migration `supabase/migrations/<phase-3 timestamp>_session_*.sql` after 03-01 lands.
 
-3. **Phase 2 patient management — UAT pass under test mode**
-   - Routes pivoted from `/orgs/[slug]/patients` → `/patients`. Verify create/list/profile flows work end-to-end.
-   - `.planning/phases/02-hasta-yonetimi/02-UAT.md` has 14 tests — re-run relevant subset (skip multi-tenant ones).
+3. **Phase 4 prerequisite check**
+   - Phase 4 (Anamnez Motoru) depends on Phase 3 transcripts. Don't start until Phase 3 checkpoint approved.
 
-4. **Then: decide Phase 3 — STT pipeline**
-   - Phase 2 tested → start `/gsd-discuss-phase 3` for Whisper STT integration.
-   - User explicitly skips discuss/research per memory `feedback_gsd_speed.md` — go straight to plan+execute.
+## Today (2026-05-07 → 2026-05-08 00:15) — Session Outcomes
+
+**Commits landed (7):**
+- `5da557e` chore: gitignore .claude/ + rm nul
+- `9e56ae8` refactor(pivot): drop multi-tenant orgs — flat user-scoped (41 files, +1711/-902)
+- `a48d9ff` fix(auth): pending session dispatcher (5 files)
+- `1b8d083` docs(02): pivot UAT to flat routes; Test 1 PASS
+- `0ebc6cd` fix(02): zod inline validation surfaced — add noValidate to form
+- `4e24e0c` docs(03): create phase plans for STT pipeline
+- `0bb7e93` docs(03): revise plans per checker feedback
+
+**Phase 2 UAT: 14/14 PASS.** Test 4 was a real bug (HTML5 `pattern` blocked zod inline error) — fixed in `src/components/patients/CreatePatientDialog.tsx:94` with `noValidate`. Test 14 (per-user RLS isolation) verified by creating Test User B via Clerk Backend API; cross-user GET → 404. User B deleted after.
+
+**Phase 3 plans:** 4 plans / 11 tasks. Discretionary architectural choices (SSE-only, no Redis, no audio retention, `whisper-1` model, Postgres-only persistence with EventEmitter SSE fan-out + 1.5s poll fallback for cross-instance writes) explicitly flagged at Wave 4 checkpoint for user sign-off.
+
+**Test data left in DB (owned by `aliegecubuks@`):** "Yiğit Kemal" (•••11), "Test Hasta UAT" (•••14), "Duplicate Test A" (•••44). Purge if desired.
 
 ---
 
