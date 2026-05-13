@@ -2,35 +2,30 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase-3-planned
-last_updated: "2026-05-08T00:15:00.000Z"
+status: phase-3-in-progress
+last_updated: "2026-05-13T11:31:00.000Z"
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 12
-  completed_plans: 8
-  percent: 28
+  completed_plans: 9
+  percent: 31
 ---
 
 # AnamnezAl — Project State
 
-## ⏰ NEXT START HERE — 2026-05-08+
+## NEXT START HERE — 2026-05-13
 
-**Open this file first.** Then in order:
+**Plan 03-01 COMPLETE.** Continue with Plan 03-02.
 
-1. **Run Phase 3 — STT pipeline**
-   - Plans landed and PASS plan-checker (commits `4e24e0c` + revision `0bb7e93`).
-   - 4 plans, 11 tasks: 03-01 DB migration → 03-02 Server + Whisper → 03-03 Client recorder + UI → 03-04 Wire patient profile + checkpoint.
-   - Run `/gsd-execute-phase 3` (per `feedback_gsd_speed.md` user skips discuss/research → go straight to execute).
-   - Wave 4 ends with a `checkpoint:human-verify` requiring explicit acknowledgement of two architectural deltas:
-     - **SSE-only audio upload via POST multipart** (CLAUDE.md mentioned WebSocket — deviation accepted at planning)
-     - **No mid-recording resume across page reload** (transcript replay survives, MediaRecorder restarts)
-   - Approve with `approved (sse-ok, no-reload-resume-ok)` to mark verified.
+1. **Run Plan 03-02 — Server routes + Whisper**
+   - Migration applied (`20260508000001_create_transcript_segments.sql`).
+   - Shared types ready (`src/lib/sessions/types.ts`).
+   - Next: POST /api/sessions, POST /api/sessions/[id]/chunks (Whisper), PATCH /api/sessions/[id]/state, GET /api/sessions/[id]/transcript (SSE).
+   - **Before running 03-02:** `npm install openai` (confirmed missing from package.json).
 
-2. **Phase 3 envs needed before execute**
+2. **Phase 3 envs still needed**
    - `OPENAI_API_KEY` set in `.env.local` for Whisper transcription.
-   - `npm install openai` — package not yet in `package.json` (planner confirmed missing).
-   - Apply migration `supabase/migrations/<phase-3 timestamp>_session_*.sql` after 03-01 lands.
 
 3. **Phase 4 prerequisite check**
    - Phase 4 (Anamnez Motoru) depends on Phase 3 transcripts. Don't start until Phase 3 checkpoint approved.

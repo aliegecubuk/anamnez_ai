@@ -63,7 +63,12 @@ Plans:
   3. Dentist can pause, resume, and stop recording at any time
   4. Full transcript is saved to the server as it arrives — closing the tab does not lose it
   5. Recording and transcription work correctly on both Chrome and Safari (MediaRecorder format differences handled)
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [x] 03-01-PLAN.md — DB migration: transcript_segments + sessions STT columns + shared types
+- [ ] 03-02-PLAN.md — API routes: POST /sessions, POST /chunks (Whisper), PATCH /state, GET /transcript (SSE)
+- [ ] 03-03-PLAN.md — Client recorder hook + RecordingPanel UI (MediaRecorder, chunk upload, live transcript)
+- [ ] 03-04-PLAN.md — Wire into patient profile + checkpoint human-verify
 
 ### Phase 4: Anamnez Motoru
 **Goal**: Admins can build form templates per department, and AI auto-fills the anamnesis form from the transcript — with alerts for missing answers and KVKK consent before saving
@@ -131,7 +136,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Temel Altyapı | 4/4 | Complete | 2026-05-02 |
 | 2. Hasta Yönetimi | 0/4 | In Progress | - |
-| 3. Ses Boru Hattı | 0/? | Not started | - |
+| 3. Ses Boru Hattı | 1/4 | In Progress | - |
 | 4. Anamnez Motoru | 0/? | Not started | - |
 | 5. Dental AI Açıklamaları | 0/? | Not started | - |
 | 6a. Periodontoloji Chartı | 0/? | Not started | - |
@@ -159,8 +164,8 @@ Plans:
 | STT-02 | Phase 3 | Pending |
 | STT-03 | Phase 3 | Pending |
 | STT-04 | Phase 3 | Pending |
-| STT-05 | Phase 3 | Pending |
-| STT-06 | Phase 3 | Pending |
+| STT-05 | Phase 3 | Complete (03-01) |
+| STT-06 | Phase 3 | Complete (03-01) |
 | TPLT-01 | Phase 4 | Pending |
 | TPLT-02 | Phase 4 | Pending |
 | TPLT-03 | Phase 4 | Pending |
