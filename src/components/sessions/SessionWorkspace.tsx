@@ -43,18 +43,19 @@ export default function SessionWorkspace({
     )
   }
 
-  // Live or resumable session. Pass server-side recorder_state into RecordingPanel
-  // (which forwards it into useChunkedRecorder as initialRecorderState) so the
-  // client mirrors server truth on mount instead of falsely starting in 'idle'.
-  //
-  // Reload limitation: the browser destroys MediaRecorder on page reload (security model).
-  // Prior transcript segments are durable; user clicks "Kaydı Başlat" to open a fresh
-  // mic stream — the server sequence counter picks up from where it left off.
+  // MediaRecorder does not survive page loads (browser security model). Any server-side
+  // 'recording' state means the recorder was destroyed — treat as 'idle' so the user
+  // sees "Kaydı Başlat" and can start a fresh mic stream. Prior transcript segments are
+  // durable; the server sequence counter picks up from where it left off.
+  // 'paused' is preserved so resumed sessions show "Devam Et" immediately on mount.
+  const clientInitialState: RecorderState =
+    recorderState === 'recording' ? 'idle' : recorderState
+
   return (
     <RecordingPanel
       sessionId={sessionId}
       audioFormat={audioFormat}
-      initialRecorderState={recorderState}
+      initialRecorderState={clientInitialState}
       onCompleted={() => router.push(`/patients/${patientId}`)}
     />
   )
