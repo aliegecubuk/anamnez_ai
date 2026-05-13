@@ -1,11 +1,10 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@clerk/nextjs/server'
-import { Mic } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { maskTc } from '@/lib/patients/types'
 import SessionHistoryTable from '@/components/patients/SessionHistoryTable'
-import { Button } from '@/components/ui/button'
+import StartSessionButton from '@/components/patients/StartSessionButton'
 import type { SessionSummary } from '@/lib/patients/types'
 
 export default async function PatientProfilePage({
@@ -82,10 +81,7 @@ export default async function PatientProfilePage({
           </div>
         </div>
 
-        <Button disabled className="h-11 gap-2 self-start lg:self-end" title="Yakında: Faz 3 ile aktif">
-          <Mic className="h-4 w-4" />
-          Yeni Seans Başlat
-        </Button>
+        <StartSessionButton patientId={patient.id} />
       </header>
 
       <section className="space-y-5">
@@ -97,7 +93,7 @@ export default async function PatientProfilePage({
             {sessionCount} kayıt
           </span>
         </div>
-        <SessionHistoryTable sessions={sessions} />
+        <SessionHistoryTable sessions={sessions} patientId={patient.id} />
       </section>
     </main>
   )

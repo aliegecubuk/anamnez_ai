@@ -1,12 +1,13 @@
+import Link from 'next/link'
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import type { SessionSummary } from '@/lib/patients/types'
 
 interface Props {
   sessions: SessionSummary[]
+  patientId: string
 }
 
 // Format date: ISO string → "dd.MM.yyyy HH:mm" in tr-TR locale
@@ -63,7 +64,7 @@ function StatusBadge({ status }: { status: SessionSummary['status'] }) {
   return <Badge variant="outline">Taslak</Badge>
 }
 
-export default function SessionHistoryTable({ sessions }: Props) {
+export default function SessionHistoryTable({ sessions, patientId }: Props) {
   if (sessions.length === 0) {
     return (
       <div className="py-12 flex flex-col items-center gap-3 text-center">
@@ -98,15 +99,12 @@ export default function SessionHistoryTable({ sessions }: Props) {
               <StatusBadge status={session.status} />
             </TableCell>
             <TableCell>
-              {/* Stub: disabled until Phase 4/6a/6b implements session view routes */}
-              <Button
-                variant="link"
-                className="text-primary p-0 h-auto"
-                disabled
-                title="Seans görüntüleme özelliği yakında açılacak"
+              <Link
+                href={`/patients/${patientId}/sessions/${session.id}`}
+                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
               >
-                Görüntüle
-              </Button>
+                {session.status === 'completed' ? 'Görüntüle' : 'Devam et'}
+              </Link>
             </TableCell>
           </TableRow>
         ))}
