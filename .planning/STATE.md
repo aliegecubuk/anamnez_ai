@@ -3,25 +3,24 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: phase-3-in-progress
-last_updated: "2026-05-13T11:35:00.000Z"
+last_updated: "2026-05-13T11:43:00.000Z"
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 12
-  completed_plans: 10
-  percent: 33
+  completed_plans: 11
+  percent: 36
 ---
 
 # AnamnezAl — Project State
 
 ## NEXT START HERE — 2026-05-13
 
-**Plan 03-02 COMPLETE.** Continue with Plan 03-03.
+**Plan 03-03 COMPLETE.** Continue with Plan 03-04.
 
-1. **Run Plan 03-03 — Client recorder hook + RecordingPanel UI**
-   - Server routes ready (POST /sessions, POST /chunks, PATCH /state, GET /stream, GET /transcript).
-   - Whisper wrapper + sessionBus ready.
-   - Next: MediaRecorder hook, chunk upload client, live transcript panel UI.
+1. **Run Plan 03-04 — Wire RecordingPanel into patient profile + human-verify checkpoint**
+   - `RecordingPanel`, `useChunkedRecorder`, `useTranscriptStream`, codec.ts all ready.
+   - Next: SessionWorkspace component, wire into `/patients/[id]` page, POST /api/sessions on session create.
 
 2. **Phase 3 envs**
    - `OPENAI_API_KEY` must be set in `.env.local` (placeholder added to `.env.example`).
