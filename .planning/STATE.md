@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: phase-3-in-progress
-last_updated: "2026-05-13T11:43:00.000Z"
+last_updated: "2026-05-13T11:50:00.000Z"
 progress:
   total_phases: 7
   completed_phases: 2
@@ -16,7 +16,14 @@ progress:
 
 ## NEXT START HERE — 2026-05-13
 
-**Plan 03-03 COMPLETE.** Continue with Plan 03-04.
+**Plan 03-04 Tasks 1-3 COMPLETE. Awaiting Task 4 checkpoint:human-verify.**
+
+Tasks 1-3 committed (8d14233, dc695ab, 69fa220):
+- StartSessionButton component wired
+- Session detail page + SessionWorkspace created
+- Patient profile page + SessionHistoryTable links activated
+
+**To continue:** approve checkpoint (run `npm run dev`, test E2E in Chrome + Safari, type `approved (sse-ok, no-reload-resume-ok)`).
 
 1. **Run Plan 03-04 — Wire RecordingPanel into patient profile + human-verify checkpoint**
    - `RecordingPanel`, `useChunkedRecorder`, `useTranscriptStream`, codec.ts all ready.
