@@ -3,32 +3,34 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: phase-3-in-progress
-last_updated: "2026-05-13T11:31:00.000Z"
+last_updated: "2026-05-13T11:35:00.000Z"
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 12
-  completed_plans: 9
-  percent: 31
+  completed_plans: 10
+  percent: 33
 ---
 
 # AnamnezAl — Project State
 
 ## NEXT START HERE — 2026-05-13
 
-**Plan 03-01 COMPLETE.** Continue with Plan 03-02.
+**Plan 03-02 COMPLETE.** Continue with Plan 03-03.
 
-1. **Run Plan 03-02 — Server routes + Whisper**
-   - Migration applied (`20260508000001_create_transcript_segments.sql`).
-   - Shared types ready (`src/lib/sessions/types.ts`).
-   - Next: POST /api/sessions, POST /api/sessions/[id]/chunks (Whisper), PATCH /api/sessions/[id]/state, GET /api/sessions/[id]/transcript (SSE).
-   - **Before running 03-02:** `npm install openai` (confirmed missing from package.json).
+1. **Run Plan 03-03 — Client recorder hook + RecordingPanel UI**
+   - Server routes ready (POST /sessions, POST /chunks, PATCH /state, GET /stream, GET /transcript).
+   - Whisper wrapper + sessionBus ready.
+   - Next: MediaRecorder hook, chunk upload client, live transcript panel UI.
 
-2. **Phase 3 envs still needed**
-   - `OPENAI_API_KEY` set in `.env.local` for Whisper transcription.
+2. **Phase 3 envs**
+   - `OPENAI_API_KEY` must be set in `.env.local` (placeholder added to `.env.example`).
 
-3. **Phase 4 prerequisite check**
-   - Phase 4 (Anamnez Motoru) depends on Phase 3 transcripts. Don't start until Phase 3 checkpoint approved.
+3. **Decisions made in 03-02**
+   - whisper-1 model (stable endpoint; swap is one line)
+   - SSE not WebSocket for server→client; POST multipart for audio upload
+   - In-process EventEmitter + 1.5s Postgres poll fallback (Redis deferred; ~50 session/instance ceiling)
+   - POST /api/sessions starts with recorder_state='recording' directly (no separate PATCH)
 
 ## Today (2026-05-07 → 2026-05-08 00:15) — Session Outcomes
 

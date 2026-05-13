@@ -66,7 +66,7 @@ Plans:
 **Plans**: 4 plans
 Plans:
 - [x] 03-01-PLAN.md — DB migration: transcript_segments + sessions STT columns + shared types
-- [ ] 03-02-PLAN.md — API routes: POST /sessions, POST /chunks (Whisper), PATCH /state, GET /transcript (SSE)
+- [x] 03-02-PLAN.md — API routes: POST /sessions, POST /chunks (Whisper), PATCH /state, GET /transcript (SSE)
 - [ ] 03-03-PLAN.md — Client recorder hook + RecordingPanel UI (MediaRecorder, chunk upload, live transcript)
 - [ ] 03-04-PLAN.md — Wire into patient profile + checkpoint human-verify
 
@@ -136,7 +136,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Temel Altyapı | 4/4 | Complete | 2026-05-02 |
 | 2. Hasta Yönetimi | 0/4 | In Progress | - |
-| 3. Ses Boru Hattı | 1/4 | In Progress | - |
+| 3. Ses Boru Hattı | 2/4 | In Progress | - |
 | 4. Anamnez Motoru | 0/? | Not started | - |
 | 5. Dental AI Açıklamaları | 0/? | Not started | - |
 | 6a. Periodontoloji Chartı | 0/? | Not started | - |
@@ -161,10 +161,10 @@ Plans:
 | PAT-04 | Phase 2 | Planned (02-01, 02-02, 02-04) |
 | PAT-05 | Phase 2 | Planned (02-01, 02-02, 02-04) |
 | STT-01 | Phase 3 | Pending |
-| STT-02 | Phase 3 | Pending |
+| STT-02 | Phase 3 | Complete (03-02) |
 | STT-03 | Phase 3 | Pending |
-| STT-04 | Phase 3 | Pending |
-| STT-05 | Phase 3 | Complete (03-01) |
+| STT-04 | Phase 3 | Complete (03-02) |
+| STT-05 | Phase 3 | Complete (03-01, 03-02) |
 | STT-06 | Phase 3 | Complete (03-01) |
 | TPLT-01 | Phase 4 | Pending |
 | TPLT-02 | Phase 4 | Pending |
