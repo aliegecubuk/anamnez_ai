@@ -14,29 +14,37 @@ progress:
 
 # AnamnezAl — Project State
 
-## NEXT START HERE — 2026-05-13
+## ⏰ NEXT START HERE — 2026-05-13 (session 2)
 
-**Plan 03-04 Tasks 1-3 COMPLETE. Awaiting Task 4 checkpoint:human-verify.**
+**Phase 3 code = 100% complete. One blocker before checkpoint approval:**
 
-Tasks 1-3 committed (8d14233, dc695ab, 69fa220):
-- StartSessionButton component wired
-- Session detail page + SessionWorkspace created
-- Patient profile page + SessionHistoryTable links activated
+### BLOCKER: OpenAI billing not active
+Whisper API requires paid account. Account shows $0 spend / $0 limit → all chunk uploads return 401/429 → W-8 auto-pause fires after 3 failures.
 
-**To continue:** approve checkpoint (run `npm run dev`, test E2E in Chrome + Safari, type `approved (sse-ok, no-reload-resume-ok)`).
+**Fix**: `platform.openai.com/settings/billing` → add payment method → set monthly limit ≥ $5. Whisper-1 = $0.006/min, very cheap.
 
-1. **Run Plan 03-04 — Wire RecordingPanel into patient profile + human-verify checkpoint**
-   - `RecordingPanel`, `useChunkedRecorder`, `useTranscriptStream`, codec.ts all ready.
-   - Next: SessionWorkspace component, wire into `/patients/[id]` page, POST /api/sessions on session create.
+### After billing fixed — run E2E test then approve checkpoint
+```
+npm run dev
+```
+1. Patient profile → "Yeni Seans Başlat" → mic permission → "Kaydı Başlat"
+2. Speak Turkish ~12s → verify transcript segments appear in LiveTranscript
+3. Pause → resume → stop → redirect back to patient profile → session in history
+4. Repeat in Safari (audio/mp4 codec path)
 
-2. **Phase 3 envs**
-   - `OPENAI_API_KEY` must be set in `.env.local` (placeholder added to `.env.example`).
+Reply `approved (sse-ok, no-reload-resume-ok)` to complete the checkpoint.
+Then run `/gsd-verify-work 3` to mark Phase 3 complete and proceed to Phase 4.
 
-3. **Decisions made in 03-02**
-   - whisper-1 model (stable endpoint; swap is one line)
-   - SSE not WebSocket for server→client; POST multipart for audio upload
-   - In-process EventEmitter + 1.5s Postgres poll fallback (Redis deferred; ~50 session/instance ceiling)
-   - POST /api/sessions starts with recorder_state='recording' directly (no separate PATCH)
+### Bugs fixed this session (2026-05-13)
+- `fix(03): normalize server recorder_state 'recording'→'idle' on mount` (9e47b6c)
+  - Root cause: POST /api/sessions creates with recorder_state='recording'; client initialized hook in 'recording' state with no MediaRecorder → Duraklat+Durdur buttons were silent no-ops
+  - Fix: SessionWorkspace maps 'recording'→'idle' before passing to RecordingPanel
+
+### Plans complete
+- 03-01 ✓ DB migration (transcript_segments + sessions STT columns)
+- 03-02 ✓ Whisper wrapper + 5 session API routes
+- 03-03 ✓ Client recorder hooks + RecordingPanel/LiveTranscript UI
+- 03-04 ✓ Patient wiring (Tasks 1-3) — checkpoint Task 4 pending user approval
 
 ## Today (2026-05-07 → 2026-05-08 00:15) — Session Outcomes
 
