@@ -10,12 +10,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
+// After the guard above, these are guaranteed non-undefined.
+const _supabaseUrl = supabaseUrl as string
+const _supabaseAnonKey = supabaseAnonKey as string
+
 export async function createSupabaseServerClient() {
   const { getToken } = await auth()
 
   return createClient(
-    supabaseUrl,
-    supabaseAnonKey,
+    _supabaseUrl,
+    _supabaseAnonKey,
     {
       global: {
         fetch: async (url, options = {}) => {
