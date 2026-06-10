@@ -82,7 +82,12 @@ Plans:
   5. Dentist can manually edit any AI-filled field before saving
   6. At session end, AI lists all unanswered questions as alerts; clicking an alert focuses the corresponding field
   7. Session cannot be saved until KVKK data processing consent and informed consent checkboxes are checked
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 04-01-PLAN.md — DB migration: form_templates + immutable template_versions + template_questions + anamnesis_answers + session consent/template columns + shared types
+- [ ] 04-02-PLAN.md — Template CRUD API + admin builder UI (create/add/edit/reorder/delete questions, immutable publish snapshot)
+- [ ] 04-03-PLAN.md — GPT-4o mapping engine (TDD): dynamic structured-output schema, transcript→answers with confidence + proper-noun correction
+- [ ] 04-04-PLAN.md — Anamnesis UI: template picker, AI-fill review with confidence badges, manual edit, missing-field alerts + focus, KVKK/consent-gated save
 **UI hint**: yes
 
 ### Phase 5: Dental AI Açıklamaları
@@ -137,7 +142,7 @@ Plans:
 | 1. Temel Altyapı | 4/4 | Complete | 2026-05-02 |
 | 2. Hasta Yönetimi | 0/4 | In Progress | - |
 | 3. Ses Boru Hattı | 3/4 | In Progress | - |
-| 4. Anamnez Motoru | 0/? | Not started | - |
+| 4. Anamnez Motoru | 0/4 | In Progress | - |
 | 5. Dental AI Açıklamaları | 0/? | Not started | - |
 | 6a. Periodontoloji Chartı | 0/? | Not started | - |
 | 6b. Patoloji Chartı | 0/? | Not started | - |
@@ -166,17 +171,17 @@ Plans:
 | STT-04 | Phase 3 | Complete (03-02, 03-03) |
 | STT-05 | Phase 3 | Complete (03-01, 03-02) |
 | STT-06 | Phase 3 | Complete (03-01, 03-03) |
-| TPLT-01 | Phase 4 | Pending |
-| TPLT-02 | Phase 4 | Pending |
-| TPLT-03 | Phase 4 | Pending |
-| TPLT-04 | Phase 4 | Pending |
-| TPLT-05 | Phase 4 | Pending |
-| ANAM-01 | Phase 4 | Pending |
-| ANAM-02 | Phase 4 | Pending |
-| ANAM-03 | Phase 4 | Pending |
-| ANAM-04 | Phase 4 | Pending |
-| ANAM-05 | Phase 4 | Pending |
-| ANAM-06 | Phase 4 | Pending |
+| TPLT-01 | Phase 4 | Planned (04-01, 04-02) |
+| TPLT-02 | Phase 4 | Planned (04-01, 04-02) |
+| TPLT-03 | Phase 4 | Planned (04-02) |
+| TPLT-04 | Phase 4 | Planned (04-01, 04-02) |
+| TPLT-05 | Phase 4 | Planned (04-04) |
+| ANAM-01 | Phase 4 | Planned (04-03, 04-04) |
+| ANAM-02 | Phase 4 | Planned (04-03, 04-04) |
+| ANAM-03 | Phase 4 | Planned (04-04) |
+| ANAM-04 | Phase 4 | Planned (04-04) |
+| ANAM-05 | Phase 4 | Planned (04-04) |
+| ANAM-06 | Phase 4 | Planned (04-01, 04-04) |
 | DESC-01 | Phase 5 | Pending |
 | DESC-02 | Phase 5 | Pending |
 | DESC-03 | Phase 5 | Pending |
