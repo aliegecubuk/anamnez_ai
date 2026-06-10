@@ -23,7 +23,9 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => ({}))) as Partial<CreateSessionBody>
   const patient_id = (body.patient_id ?? '').trim()
-  const form_type = (body.form_type ?? 'genel') as FormType
+  const template_version_id = (body.template_version_id ?? '').trim() || undefined
+  // TPLT-05: binding a template version forces the session into anamnesis mode.
+  const form_type = (template_version_id ? 'anamnez' : (body.form_type ?? 'genel')) as FormType
   const audio_format = body.audio_format as AudioFormat | undefined
 
   if (!patient_id) {
@@ -48,6 +50,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Hasta bulunamadı.' }, { status: 404 })
   }
 
+  // TPLT-05: if a template version is supplied, it must belong to the caller.
+  if (template_version_id) {
+    const { data: version } = await supabaseAdmin
+      .from('template_versions')
+      .select('id')
+      .eq('id', template_version_id)
+      .eq('user_id', userId)
+      .single<{ id: string }>()
+
+    if (!version) {
+      return NextResponse.json({ error: 'Şablon sürümü bulunamadı.' }, { status: 404 })
+    }
+  }
+
   const { data, error } = await supabaseAdmin
     .from('sessions')
     .insert({
@@ -55,6 +71,7 @@ export async function POST(req: NextRequest) {
       patient_id,
       form_type,
       audio_format,
+      template_version_id: template_version_id ?? null,
       recorder_state: 'recording', // session starts in recording state — no separate "start" PATCH needed
     })
     .select('id, started_at, recorder_state, audio_format, form_type, patient_id, status, completed_at, user_id')

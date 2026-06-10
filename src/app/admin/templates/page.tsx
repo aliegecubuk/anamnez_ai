@@ -30,6 +30,7 @@ export default async function AdminTemplatesPage() {
     current_version: t.current_version,
     question_count: (t.template_questions as { count: number }[] | null)?.[0]?.count ?? 0,
     updated_at: t.updated_at,
+    latest_version_id: null, // admin list view does not use this; picker route resolves it
   }))
 
   return (

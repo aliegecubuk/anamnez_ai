@@ -51,8 +51,16 @@ export interface TranscriptSegmentDTO {
 // POST /api/sessions body
 export interface CreateSessionBody {
   patient_id: string
-  form_type?: FormType        // defaults to 'genel'
+  form_type?: FormType        // defaults to 'genel'; forced to 'anamnez' server-side when a template is bound
   audio_format: AudioFormat
+  template_version_id?: string // TPLT-05: immutable published version the session is bound to
+}
+
+// Resolved template context for a session (questions snapshot).
+export interface SessionTemplateInfo {
+  template_version_id: string
+  version: number
+  questions: import('@/lib/templates/types').SnapshotQuestion[]
 }
 
 // PATCH /api/sessions/[id]/state body

@@ -66,6 +66,8 @@ export interface TemplateListItem {
   current_version: number
   question_count: number
   updated_at: string
+  // TPLT-05: id of the currently-published template_versions row (null = no published version).
+  latest_version_id: string | null
 }
 
 // POST /api/templates body

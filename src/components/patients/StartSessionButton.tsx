@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { pickSupportedMimeType } from '@/lib/sessions/codec'
 import type { CreateSessionBody, FormType } from '@/lib/sessions/types'
+import TemplatePicker from '@/components/sessions/TemplatePicker'
 
 interface Props {
   patientId: string
@@ -23,8 +24,10 @@ export default function StartSessionButton({
 }: Props) {
   const router = useRouter()
   const [pending, setPending] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
-  async function handleClick() {
+  // The dentist picks a template first (TPLT-05); versionId may be null (no AI form).
+  async function createSession(templateVersionId: string | null) {
     if (pending) return
     setPending(true)
     try {
@@ -42,6 +45,7 @@ export default function StartSessionButton({
         patient_id: patientId,
         form_type: formType,
         audio_format: audioFormat,
+        ...(templateVersionId ? { template_version_id: templateVersionId } : {}),
       }
 
       const res = await fetch('/api/sessions', {
@@ -64,18 +68,31 @@ export default function StartSessionButton({
   }
 
   return (
-    <Button onClick={handleClick} disabled={pending} className={className} title={title}>
-      {pending ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Başlatılıyor...
-        </>
-      ) : (
-        <>
-          <Mic className="h-4 w-4" />
-          Yeni Seans Başlat
-        </>
-      )}
-    </Button>
+    <>
+      <Button
+        onClick={() => setPickerOpen(true)}
+        disabled={pending}
+        className={className}
+        title={title}
+      >
+        {pending ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Başlatılıyor...
+          </>
+        ) : (
+          <>
+            <Mic className="h-4 w-4" />
+            Yeni Seans Başlat
+          </>
+        )}
+      </Button>
+
+      <TemplatePicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={(versionId) => void createSession(versionId)}
+      />
+    </>
   )
 }
