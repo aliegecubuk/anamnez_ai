@@ -3,7 +3,10 @@
 import { useRouter } from 'next/navigation'
 import RecordingPanel from './RecordingPanel'
 import LiveTranscript from './LiveTranscript'
+import AnamnesisForm from './AnamnesisForm'
 import type { AudioFormat, RecorderState, TranscriptSegmentDTO } from '@/lib/sessions/types'
+import type { AnamnesisAnswerDTO, MissingFieldAlert } from '@/lib/anamnesis/types'
+import type { SnapshotQuestion } from '@/lib/templates/types'
 
 interface Props {
   sessionId: string
@@ -12,6 +15,9 @@ interface Props {
   recorderState: RecorderState
   sessionStatus: 'draft' | 'completed'
   initialTranscript: TranscriptSegmentDTO[]
+  templateVersionQuestions: SnapshotQuestion[] | null
+  initialAnswers: AnamnesisAnswerDTO[]
+  initialMissing: MissingFieldAlert[]
 }
 
 export default function SessionWorkspace({
@@ -21,16 +27,30 @@ export default function SessionWorkspace({
   recorderState,
   sessionStatus,
   initialTranscript,
+  templateVersionQuestions,
+  initialAnswers,
+  initialMissing,
 }: Props) {
   const router = useRouter()
 
-  // Completed session OR session that finished recording — show static replay only.
+  // Completed session OR session that finished recording — show static replay + form.
   if (sessionStatus === 'completed' || recorderState === 'completed') {
     return (
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold">Transkript</h2>
-        <LiveTranscript segments={initialTranscript} connected={false} />
-      </section>
+      <div className="space-y-10">
+        <section className="space-y-3">
+          <h2 className="text-base font-semibold">Transkript</h2>
+          <LiveTranscript segments={initialTranscript} connected={false} />
+        </section>
+        {templateVersionQuestions && templateVersionQuestions.length > 0 && (
+          <AnamnesisForm
+            sessionId={sessionId}
+            patientId={patientId}
+            questions={templateVersionQuestions}
+            initialAnswers={initialAnswers}
+            initialMissing={initialMissing}
+          />
+        )}
+      </div>
     )
   }
 

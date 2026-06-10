@@ -3,6 +3,9 @@ import Link from 'next/link'
 import { auth } from '@clerk/nextjs/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import type { AudioFormat, RecorderState, TranscriptSegmentDTO } from '@/lib/sessions/types'
+import type { AnamnesisAnswerDTO, MissingFieldAlert } from '@/lib/anamnesis/types'
+import type { SnapshotQuestion } from '@/lib/templates/types'
+import { buildMissingAlerts } from '@/lib/anamnesis/mapper'
 import SessionWorkspace from '@/components/sessions/SessionWorkspace'
 
 export const dynamic = 'force-dynamic'
@@ -20,7 +23,7 @@ export default async function SessionPage({ params }: PageProps) {
   // Server-side fetch session row (ownership-checked) and transcript backlog.
   const { data: session, error: sessionErr } = await supabaseAdmin
     .from('sessions')
-    .select('id, patient_id, form_type, status, started_at, completed_at, audio_format, recorder_state')
+    .select('id, patient_id, form_type, status, started_at, completed_at, audio_format, recorder_state, template_version_id')
     .eq('id', sessionId)
     .eq('user_id', userId)
     .single<{
@@ -32,6 +35,7 @@ export default async function SessionPage({ params }: PageProps) {
       completed_at: string | null
       audio_format: AudioFormat | null
       recorder_state: RecorderState
+      template_version_id: string | null
     }>()
 
   if (sessionErr || !session || session.patient_id !== patientId) notFound()
@@ -53,6 +57,48 @@ export default async function SessionPage({ params }: PageProps) {
     .order('sequence', { ascending: true })
 
   const transcript: TranscriptSegmentDTO[] = (transcriptRows ?? []) as TranscriptSegmentDTO[]
+
+  // TPLT-05: if a template version is bound, load its frozen questions + any saved answers.
+  let templateVersionQuestions: SnapshotQuestion[] | null = null
+  let initialAnswers: AnamnesisAnswerDTO[] = []
+  let initialMissing: MissingFieldAlert[] = []
+
+  if (session.template_version_id) {
+    const { data: version } = await supabaseAdmin
+      .from('template_versions')
+      .select('questions')
+      .eq('id', session.template_version_id)
+      .eq('user_id', userId)
+      .single<{ questions: SnapshotQuestion[] }>()
+
+    if (version?.questions) {
+      templateVersionQuestions = version.questions
+        .slice()
+        .sort((a, b) => a.position - b.position)
+
+      const { data: answerRows } = await supabaseAdmin
+        .from('anamnesis_answers')
+        .select('question_id, prompt, question_type, answer_value, confidence, edited_by_human')
+        .eq('session_id', sessionId)
+        .eq('user_id', userId)
+
+      const byId = new Map(
+        ((answerRows ?? []) as AnamnesisAnswerDTO[]).map((a) => [a.question_id, a]),
+      )
+      initialAnswers = templateVersionQuestions
+        .map((q) => byId.get(q.id))
+        .filter((a): a is AnamnesisAnswerDTO => a !== undefined)
+
+      initialMissing = buildMissingAlerts(
+        initialAnswers.map((a) => ({
+          question_id: a.question_id,
+          answer_value: a.answer_value,
+          confidence: a.confidence ?? 0,
+        })),
+        templateVersionQuestions,
+      )
+    }
+  }
 
   // KVKK: do NOT put patient.full_name into <title> — Next.js falls back to root layout title.
 
@@ -94,6 +140,9 @@ export default async function SessionPage({ params }: PageProps) {
         recorderState={session.recorder_state}
         sessionStatus={session.status}
         initialTranscript={transcript}
+        templateVersionQuestions={templateVersionQuestions}
+        initialAnswers={initialAnswers}
+        initialMissing={initialMissing}
       />
     </main>
   )
