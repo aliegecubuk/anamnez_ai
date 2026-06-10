@@ -142,7 +142,7 @@ Plans:
 | 1. Temel Altyapı | 4/4 | Complete | 2026-05-02 |
 | 2. Hasta Yönetimi | 0/4 | In Progress | - |
 | 3. Ses Boru Hattı | 3/4 | In Progress | - |
-| 4. Anamnez Motoru | 0/4 | In Progress | - |
+| 4. Anamnez Motoru | 4/4 | Complete (code; remote migration deferred — Supabase paused) | 2026-06-11 |
 | 5. Dental AI Açıklamaları | 0/? | Not started | - |
 | 6a. Periodontoloji Chartı | 0/? | Not started | - |
 | 6b. Patoloji Chartı | 0/? | Not started | - |
