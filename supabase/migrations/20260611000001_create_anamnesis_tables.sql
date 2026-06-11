@@ -136,6 +136,11 @@ ALTER TABLE public.sessions
 ALTER TABLE public.sessions
   ADD COLUMN informed_consent boolean NOT NULL DEFAULT false;
 
+-- Backfill: pre-existing completed sessions get consent=true (test data only).
+UPDATE public.sessions
+SET kvkk_consent = true, informed_consent = true
+WHERE status = 'completed';
+
 -- ANAM-06 DB-layer guard: a session cannot be marked completed
 -- without BOTH consent flags set true — independent of API code.
 ALTER TABLE public.sessions
