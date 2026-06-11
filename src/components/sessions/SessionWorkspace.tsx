@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import RecordingPanel from './RecordingPanel'
 import LiveTranscript from './LiveTranscript'
 import AnamnesisForm from './AnamnesisForm'
+import PerioGrid from './PerioGrid'
+import PathologyChart from './PathologyChart'
 import type { AudioFormat, RecorderState, TranscriptSegmentDTO } from '@/lib/sessions/types'
 import type { AnamnesisAnswerDTO, MissingFieldAlert } from '@/lib/anamnesis/types'
 import type { SnapshotQuestion } from '@/lib/templates/types'
@@ -11,6 +13,7 @@ import type { SnapshotQuestion } from '@/lib/templates/types'
 interface Props {
   sessionId: string
   patientId: string
+  formType: string
   audioFormat: AudioFormat | null
   recorderState: RecorderState
   sessionStatus: 'draft' | 'completed'
@@ -23,6 +26,7 @@ interface Props {
 export default function SessionWorkspace({
   sessionId,
   patientId,
+  formType,
   audioFormat,
   recorderState,
   sessionStatus,
@@ -33,7 +37,7 @@ export default function SessionWorkspace({
 }: Props) {
   const router = useRouter()
 
-  // Completed session OR session that finished recording — show static replay + form.
+  // Completed session OR session that finished recording — show static replay + chart.
   if (sessionStatus === 'completed' || recorderState === 'completed') {
     return (
       <div className="space-y-10">
@@ -41,7 +45,13 @@ export default function SessionWorkspace({
           <h2 className="text-base font-semibold">Transkript</h2>
           <LiveTranscript segments={initialTranscript} connected={false} />
         </section>
-        {templateVersionQuestions && templateVersionQuestions.length > 0 && (
+        {formType === 'perio' && (
+          <PerioGrid sessionId={sessionId} patientId={patientId} />
+        )}
+        {formType === 'patoloji' && (
+          <PathologyChart sessionId={sessionId} />
+        )}
+        {formType !== 'perio' && formType !== 'patoloji' && templateVersionQuestions && templateVersionQuestions.length > 0 && (
           <AnamnesisForm
             sessionId={sessionId}
             patientId={patientId}

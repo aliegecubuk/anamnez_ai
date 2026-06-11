@@ -67,10 +67,21 @@ export default function StartSessionButton({
     }
   }
 
+  // Perio / pathology sessions need no template — go straight to recording.
+  const needsPicker = formType !== 'perio' && formType !== 'patoloji'
+
+  function handleClick() {
+    if (needsPicker) {
+      setPickerOpen(true)
+    } else {
+      void createSession(null)
+    }
+  }
+
   return (
     <>
       <Button
-        onClick={() => setPickerOpen(true)}
+        onClick={handleClick}
         disabled={pending}
         className={className}
         title={title}
@@ -83,16 +94,18 @@ export default function StartSessionButton({
         ) : (
           <>
             <Mic className="h-4 w-4" />
-            Yeni Seans Başlat
+            {title ?? 'Yeni Seans Başlat'}
           </>
         )}
       </Button>
 
-      <TemplatePicker
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        onSelect={(versionId) => void createSession(versionId)}
-      />
+      {needsPicker && (
+        <TemplatePicker
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          onSelect={(versionId) => void createSession(versionId)}
+        />
+      )}
     </>
   )
 }

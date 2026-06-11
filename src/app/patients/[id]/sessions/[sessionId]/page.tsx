@@ -136,6 +136,7 @@ export default async function SessionPage({ params }: PageProps) {
       <SessionWorkspace
         sessionId={session.id}
         patientId={patient.id}
+        formType={session.form_type}
         audioFormat={session.audio_format}
         recorderState={session.recorder_state}
         sessionStatus={session.status}

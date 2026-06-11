@@ -81,7 +81,21 @@ export default async function PatientProfilePage({
           </div>
         </div>
 
-        <StartSessionButton patientId={patient.id} />
+        <div className="flex flex-wrap gap-2 self-start lg:self-end">
+          <StartSessionButton patientId={patient.id} formType="genel" title="Anamnez" />
+          <StartSessionButton
+            patientId={patient.id}
+            formType="perio"
+            title="Periodontal Chart"
+            className="h-11 gap-2 self-start lg:self-end"
+          />
+          <StartSessionButton
+            patientId={patient.id}
+            formType="patoloji"
+            title="Patoloji Chart"
+            className="h-11 gap-2 self-start lg:self-end"
+          />
+        </div>
       </header>
 
       <section className="space-y-5">
