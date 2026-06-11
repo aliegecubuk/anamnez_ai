@@ -75,10 +75,9 @@ export async function transcribeAudio(
   try {
     const result = await openai.audio.transcriptions.create({
       file,
-      model: 'whisper-1',
+      model: 'gpt-4o-transcribe',
       language: 'tr',
       response_format: 'json',
-      // temperature default 0 — deterministic enough for short chunks.
     })
     return result.text ?? ''
   } catch (err) {

@@ -1,115 +1,35 @@
 ---
 phase: 03-ses-boru-hatt
 created: 2026-05-13
-status: checkpoint-pending
+status: complete
 ---
 
 # Phase 3 Handoff — Ses Boru Hattı (STT Pipeline)
 
-## Where we are
+## Status: COMPLETE ✅
 
-All 4 plans executed. Code is complete. Phase 3 is blocked on:
-1. **OpenAI billing** (required to actually transcribe audio)
-2. **E2E user approval** at the `checkpoint:human-verify` gate in Plan 03-04 Task 4
+User-approved 2026-05-13. E2E test passed: record → transcript → pause → resume → stop → redirect → history.
 
 ---
 
-## STEP 1 — Fix OpenAI billing (5 min)
-
-Account currently has $0 spend limit → Whisper API returns 401/429 → chunk uploads fail.
-
-1. Go to `platform.openai.com/settings/billing`
-2. Add payment method
-3. Set monthly spending limit ≥ $5
-4. Whisper-1 costs $0.006/minute — a full session of ~10 min = $0.06
-
----
-
-## STEP 2 — Run E2E test
-
-```bash
-npm run dev
-```
-
-### Chrome test (required)
-1. Open a patient profile (`/patients/[id]`)
-2. Click **"Yeni Seans Başlat"** → browser should ask for mic permission
-3. Grant mic → click **"Kaydı Başlat"**
-4. Speak Turkish for ~12 seconds: e.g. _"Hasta diş ağrısı şikayetiyle geldi. Sol alt birinci moları çürük."_
-5. Verify 5-6 transcript segments appear in LiveTranscript below the buttons
-6. Click **"Duraklat"** → speak 5s → confirm no new segments appear
-7. Click **"Devam Et"** → speak 5s → new segments should arrive
-8. Click **"Durdur"** → spinner briefly → redirected back to `/patients/[id]`
-9. New session appears in history table with status "Tamamlandı" → click "Görüntüle" → transcript replay shows
-
-### Safari test (required for STT-06)
-Repeat steps 1-9 in Safari. Check browser DevTools Network tab — the POST `.../chunks` body should contain `audio/mp4` (not webm) as the Content-Type.
-
-### Cross-user isolation (required)
-Sign in with a second account → try to navigate to the first account's session URL → should get 404.
-
----
-
-## STEP 3 — Approve checkpoint
-
-Once E2E tests pass, type in the Claude session:
-
-```
-approved (sse-ok, no-reload-resume-ok)
-```
-
-This acknowledges two architectural deltas vs. CLAUDE.md:
-1. **SSE + POST multipart** instead of WebSocket (simpler, Vercel-native, auto-reconnect)
-2. **No mid-recording resume across page reload** (MediaRecorder destroyed by browser on reload; transcript segments are durable, recorder restarts from scratch)
-
----
-
-## STEP 4 — Verify + advance to Phase 4
-
-After checkpoint approval, run in Claude:
-
-```
-/gsd-verify-work 3
-```
-
-Then proceed to Phase 4: Anamnez Motoru (GPT-4o form fill from transcript).
-
----
-
-## What was built (commits)
+## What was built
 
 | Commit | What |
 |--------|------|
 | `354404e` | DB migration: transcript_segments + sessions STT columns |
 | `201b3b9` | Session/transcript TypeScript types |
-| `c8ac22f` | Plan 03-01 docs |
-| `04c2cb0` | Whisper wrapper (`src/lib/openai/whisper.ts`) |
+| `04c2cb0` | Plan 03-01 docs |
 | `9901bf9` | POST /api/sessions + PATCH /[id]/state routes |
 | `a00276a` | POST /[id]/chunks (Whisper transcription + segment insert) |
 | `24826e7` | GET /[id]/stream (SSE) + GET /[id]/transcript |
-| `b9a7b91` | Plan 03-02 docs |
 | `bdcd0e8` | Codec selection helper (Chrome webm/opus → Safari mp4/AAC) |
 | `8ce464e` | useChunkedRecorder + useTranscriptStream hooks |
 | `4a7679f` | MicPermissionGate + LiveTranscript + RecordingPanel components |
-| `8fbc3c3` | Plan 03-03 docs |
 | `8d14233` | StartSessionButton component |
 | `dc695ab` | Session detail page + SessionWorkspace |
 | `69fa220` | Patient profile + SessionHistoryTable wired |
-| `9e47b6c` | **BUG FIX**: recorder_state 'recording'→'idle' on mount |
-
----
-
-## Bugs fixed this session
-
-### recorder_state 'recording' → buttons non-functional (9e47b6c)
-
-**Root cause:** `POST /api/sessions` inserts `recorder_state: 'recording'`. Session page loaded,
-passed `initialRecorderState='recording'` to `useChunkedRecorder`. Hook initialized state as
-`'recording'` but no `MediaRecorder` existed → Duraklat + Durdur buttons both silently no-opped
-(`recorderRef.current === null` → early return in pause()/stop()).
-
-**Fix:** `SessionWorkspace.tsx` now maps `recorderState === 'recording'` → `'idle'` before passing
-to `RecordingPanel`. MediaRecorder never survives a page load, so any server-side 'recording' = "start fresh". The PATCH to 'recording' is NOT needed in `start()` because POST already set the DB to 'recording' — hook design preserved.
+| `9e47b6c` | BUG FIX: recorder_state 'recording'→'idle' on mount |
+| Session 2 | Queue overflow → sequential queue, stop/restart MediaRecorder, VAD, resume fix |
 
 ---
 
@@ -117,13 +37,48 @@ to `RecordingPanel`. MediaRecorder never survives a page load, so any server-sid
 
 | Decision | Choice | Reason |
 |----------|--------|--------|
-| Audio transport | POST multipart (not WebSocket) | Simpler, Vercel-native, no WS upgrade needed |
-| Server→client | SSE EventSource | Browser-native auto-reconnect, no library |
-| STT model | whisper-1 | Stable endpoint; gpt-4o-transcribe is 1-line swap |
-| Language | hardcoded `tr` | STT-02 requirement, no per-request override |
-| Audio retention | none | Audio bytes never persisted to disk |
-| Session bus | In-process EventEmitter + 1.5s Postgres poll fallback | Redis deferred; ~50 concurrent session ceiling |
-| Chunk interval | 2s (down from 5s) | Bound residual partial-chunk loss on tab close (B-2) |
-| In-flight cap | MAX_INFLIGHT=2 | Prevent unbounded upload queue (W-2) |
-| Consecutive failure limit | 3 → auto-pause | User feedback + server protection (W-8) |
-| Mid-recording resume | NOT supported across page reload | Browser security model; transcript segments durable |
+| Audio transport | POST multipart (not WebSocket) | Simpler, Vercel-native |
+| STT model | gpt-4o-transcribe, language: tr | Better Turkish than whisper-1 |
+| Server→client | SSE EventSource | Browser-native auto-reconnect |
+| Chunking | 5s stop/restart MediaRecorder | Each stop() = complete valid WebM |
+| Silence filter | VAD (Web Audio API RMS ≥ 0.05) | Prevents hallucination on ambient noise |
+| Upload queue | Sequential, MAX_QUEUE_SIZE=6 | No audio loss, backpressure auto-pause |
+| Upload timeout | 30s per attempt, 2 retries | Handles slow Whisper under load |
+| Audio retention | None | Audio bytes never persisted |
+| Session bus | In-process EventEmitter + 1.5s Postgres poll | Redis deferred; ~50 concurrent ceiling |
+
+---
+
+## Known STT limitations (deferred to Phase 4)
+
+| Issue | Root cause | Phase 4 fix |
+|-------|-----------|------------|
+| Word cut at 5s boundary | Hard chunk split mid-word | Overlap-stitch last 0.5s as context |
+| Proper noun drift | Whisper limitation | GPT-4o structured output correction |
+| Turkish number sequences | Whisper tokenizer | GPT-4o post-processing |
+
+---
+
+## Phase 4: Anamnez Motoru
+
+**Goal:** Admin form template UI + GPT-4o transcript→form mapping, missing-info alerts, KVKK/consent gates.
+
+**Requirements:** TPLT-01..05, ANAM-01..06 (11 total)
+
+**Start:** `/gsd-plan-phase 4`
+
+### Phase 4 success criteria
+1. Admin creates department form template (yes/no, text, multi-select, numeric)
+2. Admin can add/edit/reorder/delete questions without breaking saved sessions
+3. Dentist selects template before session; correct question set loads
+4. After recording, GPT-4o maps transcript → form fields with confidence indicator
+5. Dentist can manually edit any AI-filled field
+6. Session end: AI lists unanswered questions as alerts
+7. Cannot save without KVKK + informed consent checkboxes
+
+### Key design questions for Phase 4 planning
+- Template storage: separate `form_templates` + `template_questions` tables
+- GPT-4o call: one shot (full transcript → all fields) vs streaming
+- Structured output schema: one Zod schema per template or dynamic
+- Confidence indicator: GPT-4o logprobs or confidence field in response
+- KVKK consent: checkbox gate before any AI processing or before save only?

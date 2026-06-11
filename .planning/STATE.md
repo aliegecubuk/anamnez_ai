@@ -2,138 +2,61 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase-3-in-progress
-last_updated: "2026-05-13T11:50:00.000Z"
+status: complete
+last_updated: "2026-06-11T04:04:00.000Z"
 progress:
   total_phases: 7
-  completed_phases: 2
+  completed_phases: 7
   total_plans: 12
-  completed_plans: 11
-  percent: 36
+  completed_plans: 12
+  percent: 100
 ---
 
 # AnamnezAl — Project State
 
-## ⏰ NEXT START HERE — 2026-05-13 (session 2)
+## ✅ MILESTONE v1.0 COMPLETE
 
-**Phase 3 code = 100% complete. One blocker before checkpoint approval:**
+All 7 phases implemented. Pending: Supabase migration batch apply + production deployment checklist.
 
-### BLOCKER: OpenAI billing not active
-Whisper API requires paid account. Account shows $0 spend / $0 limit → all chunk uploads return 401/429 → W-8 auto-pause fires after 3 failures.
+### Pre-production checklist
 
-**Fix**: `platform.openai.com/settings/billing` → add payment method → set monthly limit ≥ $5. Whisper-1 = $0.006/min, very cheap.
-
-### After billing fixed — run E2E test then approve checkpoint
-```
-npm run dev
-```
-1. Patient profile → "Yeni Seans Başlat" → mic permission → "Kaydı Başlat"
-2. Speak Turkish ~12s → verify transcript segments appear in LiveTranscript
-3. Pause → resume → stop → redirect back to patient profile → session in history
-4. Repeat in Safari (audio/mp4 codec path)
-
-Reply `approved (sse-ok, no-reload-resume-ok)` to complete the checkpoint.
-Then run `/gsd-verify-work 3` to mark Phase 3 complete and proceed to Phase 4.
-
-### Bugs fixed this session (2026-05-13)
-- `fix(03): normalize server recorder_state 'recording'→'idle' on mount` (9e47b6c)
-  - Root cause: POST /api/sessions creates with recorder_state='recording'; client initialized hook in 'recording' state with no MediaRecorder → Duraklat+Durdur buttons were silent no-ops
-  - Fix: SessionWorkspace maps 'recording'→'idle' before passing to RecordingPanel
-
-### Plans complete
-- 03-01 ✓ DB migration (transcript_segments + sessions STT columns)
-- 03-02 ✓ Whisper wrapper + 5 session API routes
-- 03-03 ✓ Client recorder hooks + RecordingPanel/LiveTranscript UI
-- 03-04 ✓ Patient wiring (Tasks 1-3) — checkpoint Task 4 pending user approval
-
-## Today (2026-05-07 → 2026-05-08 00:15) — Session Outcomes
-
-**Commits landed (7):**
-- `5da557e` chore: gitignore .claude/ + rm nul
-- `9e56ae8` refactor(pivot): drop multi-tenant orgs — flat user-scoped (41 files, +1711/-902)
-- `a48d9ff` fix(auth): pending session dispatcher (5 files)
-- `1b8d083` docs(02): pivot UAT to flat routes; Test 1 PASS
-- `0ebc6cd` fix(02): zod inline validation surfaced — add noValidate to form
-- `4e24e0c` docs(03): create phase plans for STT pipeline
-- `0bb7e93` docs(03): revise plans per checker feedback
-
-**Phase 2 UAT: 14/14 PASS.** Test 4 was a real bug (HTML5 `pattern` blocked zod inline error) — fixed in `src/components/patients/CreatePatientDialog.tsx:94` with `noValidate`. Test 14 (per-user RLS isolation) verified by creating Test User B via Clerk Backend API; cross-user GET → 404. User B deleted after.
-
-**Phase 3 plans:** 4 plans / 11 tasks. Discretionary architectural choices (SSE-only, no Redis, no audio retention, `whisper-1` model, Postgres-only persistence with EventEmitter SSE fan-out + 1.5s poll fallback for cross-instance writes) explicitly flagged at Wave 4 checkpoint for user sign-off.
-
-**Test data left in DB (owned by `aliegecubuks@`):** "Yiğit Kemal" (•••11), "Test Hasta UAT" (•••14), "Duplicate Test A" (•••44). Purge if desired.
-
----
-
-## Test Mode Active (since 2026-05-07)
-
-**Pivot pre-validation:** multi-tenant orgs dropped. Flat single-user, KVKK-compliant per-user RLS isolation.
-
-- Open registration: anyone signs up via `/sign-up`, creates patients immediately.
-- RLS: `user_id = auth.jwt() ->> 'sub'` — each user sees only their own patients.
-- Cross-account patient visibility = **off by design** (KVKK-correct, user confirmed 2026-05-07).
-- Forward-compat: `clinic_id` nullable on patients/sessions reserved for future grouping.
-- See `.planning/pivot/PIVOT-PLAN.md` for full pivot scope (13 decisions, 6 waves).
-
-Routes: `/dashboard`, `/patients`, `/patients/[id]`, `/superadmin`. APIs: `/api/patients/*`.
-
-## Last Session Diagnosis (2026-05-07 03:00–04:50 GMT+3)
-
-**Symptoms reported:**
-1. Old account `aliegecubuk99@gmail.com` → `Beklenmeyen durum: needs_second_factor` on sign-in
-2. New accounts → "Devam Et" infinite-loops back to /sign-in
-3. After back-button presses, organization-creation page shown for new accounts
-
-**Root cause (kanıtla):**
-- Clerk Dashboard: `force_organization_selection: true` (queried via `/v1/instance/organization_settings`)
-- All Clerk users `totp_enabled:false`, `two_factor_enabled:false` (verified via API) → 2FA was a red herring
-- Pivot wave dropped multi-tenant code but didn't update Clerk Dashboard config → org selection forced every session into pending state
-- Pending session + middleware default `treatPendingAsSignedOut: true` → `auth()` returned `userId: null` → bounce to /sign-in → loop
-
-**Fix applied:**
-- **Clerk side (via API):** `PATCH /v1/instance/organization_settings { force_organization_selection: false }` → 200 OK
-- **Code side:**
-  - `src/middleware.ts`: `treatPendingAsSignedOut: false` + pending → /sign-in/tasks routing for future-proofing
-  - `src/app/page.tsx`: pending dispatcher (pending → /sign-in/tasks, active superadmin → /superadmin, active normal → /dashboard)
-  - `src/app/(auth)/sign-in/page.tsx`: post-auth `router.push('/')` (root dispatches); 2FA UI added defensively for `needs_second_factor` with diagnostic console.log when `supportedSecondFactors` empty
-  - `src/app/(auth)/sign-up/page.tsx`: post-auth `router.push('/')`
-  - `src/app/(auth)/sign-in/tasks/page.tsx` + `/sign-up/tasks/page.tsx`: client `useSession` guard — active → `/`, none → /sign-in, pending → SignIn task UI
-- **Earlier in session:** `next.config.ts` webpack in-memory cache (Windows HMR corruption fix). Turbopack tried, reverted (incompatible with @base-ui/@clerk combo).
-
-**User self-fixed:** "diğer sorunu da clerk dashboarddan çözdüm" — confirms Clerk Dashboard config was the primary cause.
+- [ ] Apply batched migrations to Supabase (project currently paused): `20260611000001`, `20260611000002`, `20260611000003`
+- [ ] VERBİS registration complete
+- [ ] OpenAI DPA signed
+- [ ] Supabase DPA signed (Pro plan)
+- [ ] Vercel functions pinned to `fra1` in `vercel.json`
+- [ ] KVKK + onam consent language reviewed by Turkish legal counsel
+- [ ] Cross-border transfer disclosure (OpenAI US) in consent form
 
 ## Phase Status
 
-| # | Phase | Status |
-|---|-------|--------|
-| 1 | Temel Altyapı | Complete (pre-pivot) |
-| 2 | Hasta Yönetimi | Complete code, UAT pending under pivoted routes |
-| 3 | Ses Boru Hattı | Not Started ← **next focus** |
-| 4 | Anamnez Motoru | Not Started |
-| 5 | Dental AI Açıklamaları | Not Started |
-| 6a | Periodontoloji Chartı | Not Started |
-| 6b | Patoloji Chartı | Not Started |
+| # | Phase | Status | Key commit |
+|---|-------|--------|------------|
+| 1 | Temel Altyapı | ✅ Complete | pre-pivot |
+| 2 | Hasta Yönetimi | ✅ Complete | `9e56ae8` |
+| 3 | Ses Boru Hattı | ✅ Complete | `2ac2251` |
+| 4 | Anamnez Motoru | ✅ Complete | `1f1d0ef` |
+| 5 | Dental AI Açıklamaları | ✅ Complete | `0a6e27d` |
+| 6a | Periodontoloji Chartı | ✅ Complete | `1224445` |
+| 6b | Patoloji Chartı | ✅ Complete | `1224445` |
 
-## Uncommitted Work
+## Architecture decisions (locked)
 
-`git status` shows 28 changed/deleted files. Two logical groups:
+| Layer | Choice |
+|-------|--------|
+| Audio transport | POST multipart per chunk |
+| STT model | gpt-4o-transcribe, language: tr |
+| Server→client | SSE EventSource |
+| Chunking | 5s stop/restart MediaRecorder |
+| Silence filter | <10KB blob skipped |
+| LLM | GPT-4o Structured Outputs |
+| Form mapping | Strict json_schema response_format |
+| Description cache | dental_descriptions (user-scoped, UNIQUE term_key+category) |
+| Perio chart | perio_charts + perio_measurements (immutable after status=saved) |
+| Pathology chart | tooth_conditions (upsert on conflict) |
+| Disambiguation | <70% confidence → DisambiguationModal queue |
 
-1. **Pivot wave** — `src/app/api/orgs/`, `src/app/orgs/`, multi-tenant `superadmin/tenants` deleted; flat `/api/patients`, `/patients`, `/dashboard` added; `roles.ts`, `patients/types.ts`, `superadmin/users/[userId]/role` updated.
-2. **Auth loop fix** (this session) — `middleware.ts`, `app/page.tsx`, sign-in/sign-up pages, task pages.
+## Test Mode (active since 2026-05-07)
 
-Plus: `next.config.ts`, `package.json` (dev script), `globals.css`, `layout.tsx`, `CLAUDE.md`, `.planning/ROADMAP.md`, `.planning/STATE.md`, `.env.example`.
-
-## Blockers
-
-None. Auth flow stable. Ready to proceed with Phase 3 once commits land.
-
-## Critical Constraints (unchanged)
-
-- Tooth number accuracy zero-tolerance: 18 ≠ 28
-- KVKK consent gates Phases 4 and 6a
-- All core workflows voice-completable
-- AI descriptions dental-only
-
-## Next Action
-
-**Tomorrow (2026-05-08) start sequence above.** After commits land + Phase 2 UAT pass: `/gsd-plan-phase 3` for STT pipeline (Whisper API, Turkish locale, hands-free first).
+Flat single-user, no orgs. RLS via `user_id = auth.jwt() ->> 'sub'`.
+Routes: `/dashboard`, `/patients`, `/patients/[id]`. APIs: `/api/patients/*`, `/api/sessions/*`, `/api/descriptions`.

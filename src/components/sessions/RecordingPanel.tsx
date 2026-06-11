@@ -112,14 +112,7 @@ export default function RecordingPanel({
                   we fall through to start. Simpler: always call start() if recorder is
                   null, else resume(). The hook handles both internally — see Task 2. */}
               <Button className="gap-2" onClick={async () => {
-                try {
-                  await recorder.resume()
-                  // If resume was a no-op because the recorder doesn't exist (post-reload
-                  // resume path), fall back to start().
-                  if (recorder.state === 'paused') {
-                    await recorder.start()
-                  }
-                } catch { /* toast already fired */ }
+                try { await recorder.resume() } catch { /* toast already fired */ }
               }}>
                 <Play className="h-4 w-4" /> Devam Et
               </Button>
