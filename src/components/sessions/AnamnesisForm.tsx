@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import ConsentGate from './ConsentGate'
+import DescriptionPopover from './DescriptionPopover'
+import { classifyAnswer, extractTerms } from '@/lib/descriptions/classifier'
 import type {
   AnamnesisAnswerDTO,
   AnswerValue,
@@ -293,6 +295,24 @@ export default function AnamnesisForm({
               <ConfidenceBadge field={fields[q.id]} />
             </div>
             {renderInput(q)}
+            {(() => {
+              const field = fields[q.id]
+              const cat = classifyAnswer({
+                prompt: q.prompt,
+                question_type: q.question_type,
+                answer_value: field?.answer_value ?? null,
+              })
+              const terms = cat ? extractTerms(field?.answer_value ?? null) : []
+              if (!cat || terms.length === 0) return null
+              return (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-xs text-muted-foreground">Açıklamalar:</span>
+                  {terms.map((t) => (
+                    <DescriptionPopover key={t} term={t} category={cat} />
+                  ))}
+                </div>
+              )
+            })()}
           </div>
         ))}
       </div>
