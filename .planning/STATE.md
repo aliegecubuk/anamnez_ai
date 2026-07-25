@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: hospital-module
+milestone: v1.2
+milestone_name: field-feedback
 status: complete
-last_updated: "2026-07-25T00:00:00.000Z"
+last_updated: "2026-07-25T21:00:00.000Z"
 progress:
   total_phases: 9
   completed_phases: 9
@@ -13,6 +13,33 @@ progress:
 ---
 
 # AnamnezAl — Project State
+
+## ✅ v1.2 COMPLETE — Saha feedback paketi (gerçek hastane testi)
+
+Gerçek bir hastanede benzer ürünün saha testinden gelen kritik feedback üzerine:
+
+- **Doğruluk (P0)** — tüm GPT-4o çağrılarında `temperature: 0`; hastane çıkarımında her entry
+  zorunlu `source_quote` taşır, transkriptte ground olamayanlar deterministik olarak `dropped`'a
+  düşer (hallucination kapısı) ve UI'da "doğrulanamayan ifadeler" olarak gösterilir.
+- **Negatif başlıklar (P0)** — yalın "yok" cevapları Medula/PDF'te artık başlıklı ("İlaç alerjisi: Yok").
+- **Fizik Muayene (P1)** — `exam_entries` grubu (vital bulgular + muayene), ayrı Q&A grubu,
+  Medula paragrafı ve PDF bölümü.
+- **Checklist (P1)** — mod bazlı kritik konular; sorulmayanlar amber çip, tıklayınca boş satır.
+- **AI Insight (P2)** — düzenlenmiş Q/A'dan klinik özet paragrafı + olası ayırıcı tanılar +
+  kırmızı bayraklar (GPT-4o, temp 0; ham transkript ve kimlik ASLA gönderilmez). Disclaimer sabit;
+  PDF'e yalnız özet girer, ayırıcı tanı ekranda kalır. ⚠️ TİTCK tıbbi cihaz sınırı — hukuki inceleme şart.
+- **Şikâyet çipleri (P2)** — mod bazlı hızlı çipler; işaret eden hastalar için doktor tekrarı yükünü azaltır.
+- **Mikrofon seçici (P3)** — harici/yaka mikrofonu, localStorage kalıcı, kayıt sırasında kilitli.
+- **Eval harness (P3)** — `evals/` golden transkript seti + precision/recall/hallucination skorlama
+  (`npm run eval` canlı, `npm run eval:mock` offline). %98 hedefi ancak geniş vaka setiyle kanıtlanır.
+- **E2E** — Playwright: 6 smoke test her yerde çalışır; hastane gate akışı `CLERK_TEST_EMAIL/PASSWORD` varsa.
+
+### Açık kalan feedback maddeleri
+
+- Konuşmacı ayrıştırma (diarization) — Whisper API ile tek mikrofonda yok; doktor-tekrarı ipucu
+  UI'a eklendi, donanım/araştırma konusu.
+- Siteye giriş hatası ekran görüntüleri — arkadaştan bekleniyor, görmeden teşhis yok.
+- Canlı eval koşusu — API kotası gerekiyor, henüz koşulmadı (mock yeşil).
 
 ## ✅ v1.1 COMPLETE — Hastane (poliklinik/acil) modülü + yapılandırılmış anamnez
 
