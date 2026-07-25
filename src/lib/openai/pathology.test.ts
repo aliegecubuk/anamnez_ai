@@ -15,6 +15,12 @@ const CANNED_RESULT = {
   ambiguous: [],
 }
 
+it('exports PathologyParseError with a code field', () => {
+  const err = new PathologyParseError('boom', 'parse_error')
+  expect(err).toBeInstanceOf(Error)
+  expect(err.code).toBe('parse_error')
+})
+
 function fakeClient(content: string | null) {
   const create = vi.fn().mockResolvedValue({ choices: [{ message: { content } }] })
   return { client: { chat: { completions: { create } } }, create }

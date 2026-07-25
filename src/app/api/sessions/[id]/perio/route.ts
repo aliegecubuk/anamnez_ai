@@ -6,7 +6,6 @@ import type {
   PerioChartDTO,
   PerioChartRow,
   PerioMeasurementDTO,
-  PerioMeasurementRow,
   PerioPatchBody,
   PerioPoint,
 } from '@/lib/perio/types'
@@ -179,6 +178,16 @@ export async function PATCH(req: NextRequest, { params }: RouteCtx) {
     return NextResponse.json({ error: 'Kaydedilmiş chart değiştirilemez.' }, { status: 409 })
   }
 
+  // Merge with the existing row: fields absent from the body keep their stored
+  // value, so toggling bleeding can't wipe a pocket depth (or attachment loss).
+  const { data: existing } = await supabaseAdmin
+    .from('perio_measurements')
+    .select('pocket_depth, attachment_loss, bleeding')
+    .eq('chart_id', chart.id)
+    .eq('tooth_number', tooth_number)
+    .eq('point', point)
+    .maybeSingle<{ pocket_depth: number | null; attachment_loss: number | null; bleeding: boolean | null }>()
+
   await supabaseAdmin
     .from('perio_measurements')
     .upsert(
@@ -187,12 +196,37 @@ export async function PATCH(req: NextRequest, { params }: RouteCtx) {
         chart_id:        chart.id,
         tooth_number,
         point,
-        pocket_depth:    body.pocket_depth ?? null,
-        attachment_loss: body.attachment_loss ?? null,
-        bleeding:        body.bleeding ?? null,
+        pocket_depth:    'pocket_depth'    in body ? body.pocket_depth    ?? null : existing?.pocket_depth    ?? null,
+        attachment_loss: 'attachment_loss' in body ? body.attachment_loss ?? null : existing?.attachment_loss ?? null,
+        bleeding:        'bleeding'        in body ? body.bleeding        ?? null : existing?.bleeding        ?? null,
       },
       { onConflict: 'chart_id,tooth_number,point' },
     )
+
+  return NextResponse.json({ ok: true })
+}
+
+// DELETE /api/sessions/[id]/perio — clear all draft measurements ("Temizle")
+export async function DELETE(_req: NextRequest, { params }: RouteCtx) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id: sessionId } = await params
+  if (!await getOwnedSession(sessionId, userId)) {
+    return NextResponse.json({ error: 'Seans bulunamadı.' }, { status: 404 })
+  }
+
+  const chart = await getOrCreateChart(sessionId, userId)
+  if (!chart) return NextResponse.json({ error: 'Chart bulunamadı.' }, { status: 500 })
+  if (chart.status === 'saved') {
+    return NextResponse.json({ error: 'Kaydedilmiş chart temizlenemez.' }, { status: 409 })
+  }
+
+  await supabaseAdmin
+    .from('perio_measurements')
+    .delete()
+    .eq('chart_id', chart.id)
+    .eq('user_id', userId)
 
   return NextResponse.json({ ok: true })
 }

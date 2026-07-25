@@ -30,15 +30,21 @@ Geçerli diş numaraları: 11-18, 21-28, 31-38, 41-48
 - "kanama" / "kanama var" / "BOP" → bleeding: true
 - "kanama yok" → bleeding: false
 
+Sayı çevirisi (ÇOK ÖNEMLİ):
+- Yazıyla söylenen sayıları rakama çevir: "otuz dört" = 34, "on altı" = 16, "yirmi iki" = 22, "kırk bir" = 41.
+- Geçerli FDI aralığındaki iki basamaklı bir sayı açıkça söylenmişse (rakamla VEYA yazıyla), bu KESİN diş numarasıdır: ambiguous:false, confidence ≥ 0.9. Tekrar sorma.
+- Örnekler: "otuz dört, dört milimetre" → diş 34, cep 4mm, ambiguous:false. "yirmi ikide üç milimetre" → diş 22, 3mm, ambiguous:false. "36 ve siyah 4 milimetre" → diş 36, 4mm.
+- Diş numarasından sonra gelen küçük sayılar (0-12 aralığı, "milimetre" eşliğinde) ölçüm değeridir, diş numarası değildir.
+
 Önemli kurallar:
 1. Sadece transkriptte açıkça belirtilen ölçümleri doldur. Belirtilmeyenler null olmalı (asla 0 koyma).
 2. Bir ölçüm sırası "üç iki üç" gibi verilirse sırasıyla MB/B/DB veya ML/L/DL olarak dağıt.
 3. Bağlam yoksa (sadece "bukkal" denmişse) MB/B/DB'ye dağıt.
-4. ambiguous kuralları — aşağıdaki durumlar için ambiguous:true ve candidates listesi ekle:
+4. ambiguous SADECE şu durumlarda kullanılır (candidates listesiyle birlikte):
    - "diş 8" gibi tek haneli ifadeler → candidates: [18, 28, 38, 48]
-   - "birler", "ikiler"  vb. çoğul diş grupları
-   - Çeyrek (kadran) belli değilse
-   - confidence < 0.7 ise ambiguous:true yap
+   - "birler", "ikiler" vb. çoğul diş grupları
+   - Kadran gerçekten belirsizse
+   Açıkça söylenmiş geçerli bir FDI numarasını ASLA ambiguous yapma.
 5. Kesinlikle emin olmadığın ölçümleri uydurma.
 
 JSON şemasına tam uyacak şekilde cevap ver.`

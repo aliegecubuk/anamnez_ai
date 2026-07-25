@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { parsePathologyTranscript, PathologyParseError } from '@/lib/openai/pathology'
-import type { ToothConditionDTO, ToothConditionRow, PathologyCondition } from '@/lib/perio/types'
+import type { ToothConditionDTO, PathologyCondition } from '@/lib/perio/types'
 import { ALL_CONDITIONS, ALL_FDI_TEETH } from '@/lib/perio/types'
 
 export const runtime = 'nodejs'
