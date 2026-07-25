@@ -93,6 +93,7 @@ export async function generateAiReport(
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
+      temperature: 0,
       messages: [
         { role: 'system', content: REPORT_SYSTEM_PROMPT },
         { role: 'user', content: buildReportInput(entries, medications) },

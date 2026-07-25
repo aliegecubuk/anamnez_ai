@@ -105,6 +105,7 @@ export async function parseStructuredAnamnesis(transcript: string): Promise<Stru
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
+      temperature: 0,
       messages: [
         { role: 'system', content: STRUCTURED_SYSTEM_PROMPT },
         { role: 'user', content: transcript },

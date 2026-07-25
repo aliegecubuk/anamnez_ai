@@ -92,6 +92,7 @@ export async function parsePathologyTranscript(transcript: string): Promise<Path
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
+      temperature: 0,
       messages: [
         { role: 'system', content: PATHOLOGY_SYSTEM_PROMPT },
         { role: 'user', content: transcript },

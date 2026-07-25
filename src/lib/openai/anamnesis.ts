@@ -56,6 +56,7 @@ export async function mapTranscriptToAnswers(
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
+      temperature: 0,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: transcript },

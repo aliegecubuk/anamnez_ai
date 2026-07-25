@@ -50,6 +50,7 @@ export async function generateDentalDescription(
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
+      temperature: 0,
       messages: [
         { role: 'system', content: DESCRIPTION_SYSTEM_PROMPT },
         { role: 'user', content: userMessage },

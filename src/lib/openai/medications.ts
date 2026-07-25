@@ -62,6 +62,7 @@ export async function enrichMedication(name: string): Promise<MedicationEnrichme
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
+      temperature: 0,
       messages: [
         { role: 'system', content: MEDICATION_SYSTEM_PROMPT },
         { role: 'user', content: `İlaç: ${name}` },

@@ -124,6 +124,7 @@ export async function parsePerioTranscript(transcript: string): Promise<PerioPar
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
+      temperature: 0,
       messages: [
         { role: 'system', content: PERIO_SYSTEM_PROMPT },
         { role: 'user', content: transcript },
