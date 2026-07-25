@@ -24,7 +24,7 @@ Routes: `/modules` (module picker), `/dashboard` (diş), `/hospital` (poliklinik
 
 - **Diş** (`/dashboard`) — persistent patient records, 10-section structured anamnesis (Hacettepe), perio + pathology charts, medication cards, AI report, PDF export.
 - **Hastane** (`/hospital`) — fully ephemeral: no DB rows, identity (name/TC/phone) stays on device and is masked (`***`) in the transcript. Two modes: `hizli` (Acil — critical items only) / `detayli` (Poliklinik — comprehensive). Output: Medula-ready text + PDF, then full wipe.
-- **Terapist** — planned (disabled stub on `/modules`).
+Terapist modülü kaldırıldı (2026-07-25).
 - Module-level KVKK consent via `KvkkGate` (localStorage, text version v1 — still draft, legal review pending).
 
 **Workflow ekol:** ARAŞTIR → PLANLA → EXECUTE → REVIEW → NEXT. GSD slash-command'ları çağırma — token israfı.

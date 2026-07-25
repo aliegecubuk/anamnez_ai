@@ -36,13 +36,13 @@ v1.0 (dental milestone) üzerine eklenenler, hepsi commit'lendi:
   Türkçe-aware) → stateless `/api/hospital/transcribe` + `/api/hospital/extract` →
   düzenlenebilir Q&A kartları → Medula metni (clipboard) + PDF → sıfırlama.
   İki mod: `hizli` (Acil — sadece kritik başlıklar) / `detayli` (Poliklinik — kapsamlı).
-- **Modül seçici** — `/modules` (Diş → /dashboard, Hastane → /hospital, Terapist disabled).
+- **Modül seçici** — `/modules` (Diş → /dashboard, Hastane → /hospital, Terapist kaldırıldı).
   `/` sign-in sonrası `/modules`'e düşer. `KvkkGate` modül bazlı onay (localStorage, v1 metin).
 - **useChunkedRecorder genellemesi** — opsiyonel `chunkUrl` (stateless mod) + `onSegment` callback.
 
 ### Pre-production checklist
 
-- [ ] Apply batched migrations to Supabase (project currently paused): `20260611000001`, `20260611000002`, `20260611000003`, `20260702000001`+`20260702000002` (structured anamnesis; 0002 idempotent repair)
+- [x] Migrations applied to remote Supabase — verified 2026-07-25 (all 15 tables present via REST)
 - [ ] VERBİS registration complete
 - [ ] OpenAI DPA signed
 - [ ] Supabase DPA signed (Pro plan)
@@ -81,7 +81,7 @@ v1.0 (dental milestone) üzerine eklenenler, hepsi commit'lendi:
 | Pathology chart | tooth_conditions (upsert on conflict) |
 | Disambiguation | <70% confidence → DisambiguationModal queue |
 | Hospital module | Fully ephemeral — no DB, identity stays on device, masked transcript |
-| Module consent | KvkkGate per module (dis/hastane/terapist), localStorage, text version v1 |
+| Module consent | KvkkGate per module (dis/hastane), localStorage, text version v1 |
 
 ## Test Mode (active since 2026-05-07)
 

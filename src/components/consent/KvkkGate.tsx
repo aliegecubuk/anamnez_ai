@@ -5,12 +5,11 @@ import { useUser } from '@clerk/nextjs'
 import { ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export type KvkkModule = 'dis' | 'hastane' | 'terapist'
+export type KvkkModule = 'dis' | 'hastane'
 
 const MODULE_LABELS: Record<KvkkModule, string> = {
   dis: 'Diş Hekimliği',
   hastane: 'Hastane',
-  terapist: 'Terapist',
 }
 
 // Bump when the KVKK text changes — forces re-consent.

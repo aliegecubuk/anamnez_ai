@@ -19,7 +19,6 @@
 - [x] **Phase 6b: Patoloji Chartı** — 32-tooth visual SVG chart, voice-driven condition highlighting, multi-condition, review
 - [x] **Phase 7: Yapılandırılmış Anamnez + STT Latency (v1.1)** — 10 fixed sections (Hacettepe), medication cards, AI report, PDF export; pause-aware segmentation, parallel uploads, gpt-4o-mini-transcribe
 - [x] **Phase 8: Hastane Modülü (v1.1)** — Ephemeral poliklinik/acil anamnez: identity masking, hizli/detayli modes, Medula text + PDF, module picker + KvkkGate
-- [ ] **Phase 9: Terapist Modülü** — planned (stub "Yakında" on /modules)
 
 ---
 

@@ -5,8 +5,7 @@ import { ArrowUpRight } from 'lucide-react'
 import TopBar from '@/components/app/TopBar'
 
 // Module selection — the first screen after sign-in. Editorial rows (same
-// language as the dashboard), one accent dot per module: diş=teal, hastane=mavi,
-// terapist=mor.
+// language as the dashboard), one accent dot per module: diş=teal, hastane=mavi.
 export default async function ModulesPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
@@ -42,12 +41,6 @@ export default async function ModulesPage() {
             title="Hastane"
             note="Poliklinik ve acil için hızlı anamnez. Medula metni, PDF, kayıt tutulmaz."
           />
-          <ModuleRow
-            dotClass="bg-purple-600"
-            title="Terapist"
-            note="Seans notları ve danışan takibi."
-            disabled
-          />
         </section>
 
         <footer className="mt-20 flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -64,47 +57,33 @@ function ModuleRow({
   dotClass,
   title,
   note,
-  disabled = false,
 }: {
-  href?: string
+  href: string
   dotClass: string
   title: string
   note: string
-  disabled?: boolean
 }) {
-  const inner = (
-    <div className="flex items-start justify-between gap-8">
-      <div className="max-w-[52ch] space-y-2.5">
-        <p className="inline-flex items-center gap-2.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-          <span aria-hidden className={`inline-block h-1.5 w-1.5 rounded-full ${dotClass} ${disabled ? 'opacity-40' : ''}`} />
-          {disabled ? 'Yakında' : 'Modül'}
-        </p>
-        <h2 className="font-display text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.05] tracking-tight text-foreground">
-          {title}
-        </h2>
-        <p className="text-[15px] leading-relaxed text-muted-foreground">{note}</p>
-      </div>
-      {!disabled && (
-        <ArrowUpRight
-          className="mt-4 h-7 w-7 flex-shrink-0 text-muted-foreground transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-primary"
-          aria-hidden
-        />
-      )}
-    </div>
-  )
-
-  if (disabled || !href) {
-    return (
-      <div className="border-b border-border py-9 opacity-60 last:border-b-0">{inner}</div>
-    )
-  }
-
   return (
     <Link
       href={href}
       className="group -mx-6 block border-b border-border px-6 py-9 transition-colors last:border-b-0 hover:bg-secondary/40"
     >
-      {inner}
+      <div className="flex items-start justify-between gap-8">
+        <div className="max-w-[52ch] space-y-2.5">
+          <p className="inline-flex items-center gap-2.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+            <span aria-hidden className={`inline-block h-1.5 w-1.5 rounded-full ${dotClass}`} />
+            Modül
+          </p>
+          <h2 className="font-display text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.05] tracking-tight text-foreground">
+            {title}
+          </h2>
+          <p className="text-[15px] leading-relaxed text-muted-foreground">{note}</p>
+        </div>
+        <ArrowUpRight
+          className="mt-4 h-7 w-7 flex-shrink-0 text-muted-foreground transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-primary"
+          aria-hidden
+        />
+      </div>
     </Link>
   )
 }
