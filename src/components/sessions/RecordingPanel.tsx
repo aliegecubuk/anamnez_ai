@@ -5,7 +5,9 @@ import { Mic, Pause, Play, Square, Loader2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import MicPermissionGate from './MicPermissionGate'
+import MicSelector from '@/components/app/MicSelector'
 import { useChunkedRecorder } from '@/hooks/useChunkedRecorder'
+import { useMicDevice } from '@/hooks/useMicDevice'
 import { useTranscriptStream } from '@/hooks/useTranscriptStream'
 import type { AudioFormat, RecorderState, TranscriptSegmentDTO } from '@/lib/sessions/types'
 
@@ -51,9 +53,11 @@ export default function RecordingPanel({
     )
   }, [])
 
+  const [micDeviceId, setMicDeviceId] = useMicDevice()
   const recorder = useChunkedRecorder({
     sessionId,
     audioFormat,
+    deviceId: micDeviceId,
     initialRecorderState,
     onError: (err) => toast.error(err.message),
     onSegment: handleSegment,
@@ -102,6 +106,13 @@ export default function RecordingPanel({
             </div>
           </div>
         )}
+
+        {/* Mic picker: selectable before/after a recording; locked while one is live. */}
+        <MicSelector
+          value={micDeviceId}
+          onChange={setMicDeviceId}
+          disabled={recorder.state === 'recording' || recorder.state === 'paused' || recorder.state === 'stopped'}
+        />
 
         {/* Controls */}
         <div className="flex items-center gap-3">

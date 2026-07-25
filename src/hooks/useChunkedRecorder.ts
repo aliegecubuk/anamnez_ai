@@ -32,6 +32,11 @@ interface UseChunkedRecorderOptions {
   // state sync. Takes precedence over sessionId for the upload target.
   chunkUrl?: string
   audioFormat: AudioFormat
+  // Preferred mic (MediaDeviceInfo.deviceId). Applied with `ideal` so an unplugged
+  // device falls back to the default mic instead of failing. Read at start() time:
+  // changing it mid-recording does NOT touch the live stream — it takes effect on
+  // the next start() (restart is under user control).
+  deviceId?: string
   chunkMs?: number   // max segment length cap (pause detection usually cuts earlier)
   initialRecorderState?: RecorderState
   onError?: (err: Error) => void
@@ -64,6 +69,7 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
     sessionId,
     chunkUrl,
     audioFormat,
+    deviceId,
     chunkMs: maxSegmentMs = DEFAULT_MAX_SEGMENT_MS,
     initialRecorderState = 'idle',
     onError,
@@ -99,6 +105,11 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
 
   const onSegmentRef = useRef(onSegment)
   useEffect(() => { onSegmentRef.current = onSegment }, [onSegment])
+
+  // Read at start() time, so a device switch while idle applies to the next
+  // recording without re-creating callbacks or touching a live stream.
+  const deviceIdRef = useRef(deviceId)
+  useEffect(() => { deviceIdRef.current = deviceId }, [deviceId])
 
   const stateRef = useRef<RecorderState>(initialRecorderState)
   useEffect(() => { stateRef.current = state }, [state])
@@ -323,7 +334,10 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
 
   const start = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const id = deviceIdRef.current
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: id ? { deviceId: { ideal: id } } : true,
+      })
       streamRef.current = stream
       sequenceRef.current = 0
       consecutiveFailuresRef.current = 0
