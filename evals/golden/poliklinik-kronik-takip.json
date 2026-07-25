@@ -1,0 +1,24 @@
+{
+  "id": "poliklinik-kronik-takip",
+  "title": "Dahiliye poliklinik — hipertansiyon/diyabet kontrolü (detaylı mod)",
+  "mode": "detayli",
+  "transcript": "Doktor: Merhaba, nasılsınız? Kontrole geldiniz sanırım.\nHasta: Merhaba doktor hanım, evet kontrole geldim ama son iki haftadır sabahları başım dönüyor.\nDoktor: Anlıyorum. Tansiyonunuz ve şekeriniz vardı, ilaçlarınızı düzenli kullanıyor musunuz?\nHasta: Evet, amlodipin 10 miligram sabahları, metformin 1000 miligram sabah akşam alıyorum, aksatmıyorum.\nDoktor: Evde tansiyon ölçüyor musunuz, değerler nasıl?\nHasta: Ölçüyorum, genelde 150'ye 90 civarı çıkıyor.\nDoktor: Son tetkikleriniz ne zaman yapılmıştı?\nHasta: Bir ay önce yaptırdım, HbA1c yüzde 7,8 çıktı dediler.\nDoktor: Hatırlatır mısınız, tansiyon ve şeker ne zamandır var?\nHasta: Tansiyon 10 yıldır var, şeker de 6 yıl önce çıktı.\nDoktor: Hiç ameliyat geçirdiniz mi?\nHasta: 20 yaşında apandisit ameliyatı oldum, başka yok.\nDoktor: Herhangi bir şeye alerjiniz var mı?\nHasta: Bildiğim alerjim yok.\nDoktor: Sigara kullanıyor musunuz?\nHasta: İçiyordum, 5 sene önce bıraktım. 20 yıl kadar içmiştim.\nDoktor: Ailenizde kalp hastalığı ya da şeker hastalığı olan var mı?\nHasta: Babam 55 yaşında kalp krizi geçirdi, annemde de şeker var.\nDoktor: Peki, ilaçlarınıza aynen devam edelim, baş dönmesi için tansiyon saatlerinizi not edin.",
+  "expected_entries": [
+    { "question": "Şikâyet", "answer": "Son iki haftadır sabahları baş dönmesi, kontrol başvurusu" },
+    { "question": "Kronik hastalıklar", "answer": "10 yıldır hipertansiyon, 6 yıldır tip 2 diyabet" },
+    { "question": "Kullandığı ilaçlar", "answer": "Amlodipin 10 mg sabah, metformin 1000 mg sabah-akşam" },
+    { "question": "Tansiyon ölçümleri", "answer": "Evde ölçümleri 150/90 civarında" },
+    { "question": "Son tetkikler", "answer": "Bir ay önce HbA1c %7,8" },
+    { "question": "Geçirilmiş ameliyatlar", "answer": "20 yaşında apandektomi" },
+    { "question": "Alerjiler", "answer": "Bilinen alerjisi yok" },
+    { "question": "Sigara kullanımı", "answer": "5 yıl önce bırakmış, öncesinde 20 yıl içmiş" },
+    { "question": "Soygeçmiş", "answer": "Babada 55 yaşında kalp krizi, annede diyabet" }
+  ],
+  "forbidden_entries": [
+    { "question": "Alkol kullanımı", "reason": "Hiç sorulmadı" },
+    { "question": "Gebelik", "reason": "Konuşulmadı" },
+    { "question": "Aşılama durumu", "reason": "Konuşulmadı" },
+    { "question": "Yeni ilaç başlanması", "reason": "Doktor mevcut ilaçlara aynen devam dedi, yeni ilaç başlanmadı" },
+    { "question": "Düzenli egzersiz", "reason": "Konuşulmadı" }
+  ]
+}

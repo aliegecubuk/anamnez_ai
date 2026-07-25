@@ -1,0 +1,22 @@
+{
+  "id": "acil-karin-agrisi",
+  "title": "Acil servis — akut karın ağrısı (hızlı mod)",
+  "mode": "hizli",
+  "transcript": "Doktor: Geçmiş olsun, buyurun ne şikâyetiniz var?\nHasta: Karnım çok ağrıyor doktor bey.\nDoktor: Ne zaman başladı, tam olarak neresi ağrıyor?\nHasta: Sabah kahvaltıdan sonra başladı, yaklaşık 6 saat oldu. Önce göbeğimin çevresindeydi, sonra sağ alt tarafa kaydı.\nDoktor: Bulantı, kusma var mı?\nHasta: Bulantım var, bir kere kustum. İştahım da yok.\nDoktor: Ateşiniz çıktı mı?\nHasta: Ateşim var gibi hissediyorum ama ölçmedim.\nDoktor: Bildiğiniz bir hastalığınız var mı, şeker, tansiyon gibi?\nHasta: Hayır, bilinen bir hastalığım yok.\nDoktor: Düzenli kullandığınız bir ilaç var mı?\nHasta: Yok, ilaç kullanmıyorum.\nDoktor: Herhangi bir ilaca ya da gıdaya alerjiniz var mı?\nHasta: Hayır, bildiğim alerjim yok.\nDoktor: Peki ***, şimdi muayene edelim bakalım.",
+  "expected_entries": [
+    { "question": "Şikâyet", "answer": "Göbek çevresinden sağ alt kadrana yayılan karın ağrısı" },
+    { "question": "Şikâyet süresi", "answer": "Yaklaşık 6 saattir, kahvaltı sonrası başlamış" },
+    { "question": "Eşlik eden semptomlar", "answer": "Bulantı, bir kez kusma, iştahsızlık ve ateş hissi" },
+    { "question": "Kronik hastalıklar", "answer": "Bilinen kronik hastalığı yok" },
+    { "question": "Kullandığı ilaçlar", "answer": "Düzenli ilaç kullanmıyor" },
+    { "question": "Alerjiler", "answer": "Bilinen alerjisi yok" }
+  ],
+  "forbidden_entries": [
+    { "question": "Gebelik", "reason": "Hasta erkek ve gebelik hiç konuşulmadı" },
+    { "question": "Son adet tarihi", "reason": "Sorulmadı" },
+    { "question": "Geçirilmiş ameliyatlar", "reason": "Ameliyat öyküsü konuşulmadı" },
+    { "question": "Sigara kullanımı", "reason": "Konuşulmadı" },
+    { "question": "Alkol kullanımı", "reason": "Konuşulmadı" },
+    { "question": "Soygeçmiş", "reason": "Aile öyküsü sorulmadı" }
+  ]
+}

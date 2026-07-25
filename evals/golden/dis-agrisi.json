@@ -1,0 +1,21 @@
+{
+  "id": "dis-agrisi",
+  "title": "Diş hekimi acil — gece uyandıran diş ağrısı (hızlı mod)",
+  "mode": "hizli",
+  "transcript": "Doktor: Merhaba, ne şikâyetiniz var?\nHasta: Merhaba, dişim çok ağrıyor, sol alt taraftaki azı dişim.\nDoktor: Ne kadar süredir ağrıyor?\nHasta: 3 gündür ağrıyor, geceleri uykudan uyandırıyor.\nDoktor: Soğuk, sıcak bir şey yiyip içince artıyor mu?\nHasta: Evet, özellikle soğuk su içince çok batıyor.\nDoktor: Yüzünüzde şişlik var mı?\nHasta: Dünden beri bu tarafım şişti, yanağım şiş.\nDoktor: Ağrı için bir ilaç aldınız mı?\nHasta: Parasetamol aldım, biraz hafifletti ama tam geçmiyor.\nDoktor: Herhangi bir ilaca alerjiniz var mı?\nHasta: Penisiline alerjim var, çocukken döküntü yapmıştı.\nDoktor: Bildiğiniz bir hastalığınız var mı?\nHasta: Hayır, hastalığım yok.\nDoktor: Anladım, şimdi ağzınıza bakalım.",
+  "expected_entries": [
+    { "question": "Şikâyet", "answer": "Sol alt azı dişte ağrı" },
+    { "question": "Şikâyet süresi", "answer": "3 gündür" },
+    { "question": "Ağrı özellikleri", "answer": "Gece uyandıran, soğuk ve sıcakla artan ağrı" },
+    { "question": "Eşlik eden semptomlar", "answer": "Dünden beri yanakta şişlik" },
+    { "question": "Kullandığı ilaçlar", "answer": "Parasetamol ile kısmi rahatlama" },
+    { "question": "Alerjiler", "answer": "Penisilin alerjisi (çocuklukta döküntü)" },
+    { "question": "Kronik hastalıklar", "answer": "Bilinen kronik hastalığı yok" }
+  ],
+  "forbidden_entries": [
+    { "question": "Gebelik", "reason": "Sorulmadı — genç kadın hastada modelin uydurma eklemesi için tuzak" },
+    { "question": "Sigara kullanımı", "reason": "Konuşulmadı" },
+    { "question": "Geçirilmiş diş tedavisi", "reason": "Önceki diş tedavisi konuşulmadı" },
+    { "question": "Soygeçmiş", "reason": "Konuşulmadı" }
+  ]
+}

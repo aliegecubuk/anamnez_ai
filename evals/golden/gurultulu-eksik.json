@@ -1,0 +1,21 @@
+{
+  "id": "gurultulu-eksik",
+  "title": "Acil — göğüs ağrısı, gürültülü/yarım kalmış transkript (hızlı mod)",
+  "mode": "hizli",
+  "transcript": "Doktor: Geçmiş olsun, ne oldu?\nHasta: Göğsümde bir baskı var, sıkışıyor gibi... [anlaşılamadı]\nDoktor: Ne zaman başladı?\nHasta: Yarım saat mi oldu, bir saat mi... şey, yoldaydım, bilemiyorum.\nDoktor: Ağrı bir yere yayılıyor mu?\nHasta: Sol koluma doğru gidiyor gibi, ı-ıh... [gürültü]\nDoktor: Terleme, bulantı var mı?\nHasta: Çok terliyorum, bulantı yok.\nDoktor: Bilinen bir hastalığınız, kullandığınız ilaç var mı?\nHasta: Şey... tansiyon hapı kullanıyordum da, adını bir türlü hatırlayamıyorum.\nDoktor: Alerjiniz var mı?\nHasta: Ben şey... [bağlantı kesildi, konuşma tamamlanamadı]",
+  "expected_entries": [
+    { "question": "Şikâyet", "answer": "Göğüste baskı hissi, sıkışma" },
+    { "question": "Şikâyet süresi", "answer": "Yarım saat ile bir saat arası, hasta net ifade edemiyor" },
+    { "question": "Eşlik eden semptomlar", "answer": "Terleme mevcut, bulantı yok" },
+    { "question": "Ağrı yayılımı", "answer": "Ağrı sol kola yayılıyor" },
+    { "question": "Kullandığı ilaçlar", "answer": "Adını hatırlamadığı bir tansiyon ilacı" }
+  ],
+  "forbidden_entries": [
+    { "question": "Alerjiler", "reason": "Alerji soruldu ama cevap alınamadan konuşma kesildi — 'alerjisi yok' yazılamaz" },
+    { "question": "Kronik hastalıklar", "reason": "Hastalık adı hiç konuşulmadı; tansiyon hapı iması hastalık tanısı yazdırmaz" },
+    { "question": "EKG bulguları", "reason": "EKG konuşmada yapılmadı/bahsedilmedi" },
+    { "question": "Sigara kullanımı", "reason": "Konuşulmadı" },
+    { "question": "Soygeçmiş", "reason": "Konuşulmadı" },
+    { "question": "Gebelik", "reason": "Konuşulmadı" }
+  ]
+}

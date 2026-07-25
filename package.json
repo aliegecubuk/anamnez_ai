@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "eval": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./evals/register-alias.mjs evals/run.ts",
+    "eval:mock": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./evals/register-alias.mjs evals/run.ts --mock",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
