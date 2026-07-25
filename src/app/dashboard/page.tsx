@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { ArrowUpRight, Mic, Activity, Stethoscope } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import TopBar from '@/components/app/TopBar'
+import KvkkGate from '@/components/consent/KvkkGate'
 
 async function getStats(userId: string) {
   const [{ count: patientCount }, { data: lastPatient }] = await Promise.all([
@@ -42,19 +43,19 @@ export default async function DashboardPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
-  const user = await currentUser()
+  // Clerk profile fetch and Supabase stats are independent — overlap them.
+  const [user, stats] = await Promise.all([currentUser(), getStats(userId)])
   const firstName =
     user?.firstName ??
     user?.primaryEmailAddress?.emailAddress?.split('@')[0] ??
     'doktor'
-
-  const stats = await getStats(userId)
 
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
 
       <main className="mx-auto max-w-5xl px-6 py-14 lg:py-20">
+        <KvkkGate module="dis">
         {/* Greeting */}
         <section className="mb-16 lg:mb-20">
           <p className="mb-3 inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
@@ -127,6 +128,7 @@ export default async function DashboardPage() {
           <span>KVKK uyumlu · Frankfurt eu-central-1</span>
           <span className="font-mono normal-case tracking-normal">v0.1 · test</span>
         </footer>
+        </KvkkGate>
       </main>
     </div>
   )

@@ -12,5 +12,6 @@ export default async function RootPage() {
   const role = (sessionClaims?.metadata as Record<string, unknown>)?.role
   if (role === 'superadmin') redirect('/superadmin')
 
-  redirect('/dashboard')
+  // Module selection first: diş → /dashboard, hastane → /hospital.
+  redirect('/modules')
 }

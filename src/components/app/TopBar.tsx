@@ -29,7 +29,7 @@ export default function TopBar() {
     <header className="border-b border-border bg-background">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
         <Link
-          href="/dashboard"
+          href="/modules"
           className="font-display text-[22px] leading-none tracking-tight inline-flex items-center gap-2.5 text-foreground"
         >
           <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
