@@ -5,7 +5,9 @@ import { Mic, Pause, Play, Square, Loader2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import MicPermissionGate from '@/components/sessions/MicPermissionGate'
+import MicSelector from '@/components/app/MicSelector'
 import { useChunkedRecorder } from '@/hooks/useChunkedRecorder'
+import { useMicDevice } from '@/hooks/useMicDevice'
 import type { AudioFormat, RecorderState, TranscriptSegmentDTO } from '@/lib/sessions/types'
 
 interface Props {
@@ -20,9 +22,11 @@ interface Props {
  * no session row). The parent owns the segment list and wipes it on reset.
  */
 export default function HospitalRecordingPanel({ audioFormat, onSegment, onStateChange }: Props) {
+  const [micDeviceId, setMicDeviceId] = useMicDevice()
   const recorder = useChunkedRecorder({
     chunkUrl: `/api/hospital/transcribe?format=${encodeURIComponent(audioFormat)}`,
     audioFormat,
+    deviceId: micDeviceId,
     onError: (err) => toast.error(err.message),
     onSegment,
   })
@@ -59,6 +63,13 @@ export default function HospitalRecordingPanel({ audioFormat, onSegment, onState
             </div>
           </div>
         )}
+
+        {/* Mic picker: selectable before/after a recording; locked while one is live. */}
+        <MicSelector
+          value={micDeviceId}
+          onChange={setMicDeviceId}
+          disabled={recorder.state === 'recording' || recorder.state === 'paused' || recorder.state === 'stopped'}
+        />
 
         <div className="flex items-center gap-3">
           {recorder.state === 'idle' && (

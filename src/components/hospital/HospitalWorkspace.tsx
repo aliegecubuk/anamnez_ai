@@ -8,14 +8,20 @@ import IdentityPanel from './IdentityPanel'
 import HospitalRecordingPanel from './HospitalRecordingPanel'
 import QaCards from './QaCards'
 import MedulaBox from './MedulaBox'
+import InsightCard, { type InsightState } from './InsightCard'
 import { buildMedulaText } from '@/lib/hospital/medula'
 import { maskIdentity } from '@/lib/hospital/masking'
+import { missingCriticalTopics, type CriticalTopic } from '@/lib/hospital/checklist'
 import {
+  COMPLAINT_CHIPS,
   EMPTY_IDENTITY,
   HOSPITAL_MODE_LABELS,
   type HospitalEntry,
+  type HospitalExtractEntry,
   type HospitalExtractResult,
   type HospitalIdentity,
+  type HospitalInsightBody,
+  type HospitalInsightResult,
   type HospitalMode,
 } from '@/lib/hospital/types'
 import { pickSupportedMimeType } from '@/lib/sessions/codec'
@@ -28,11 +34,19 @@ interface SpeechSegment {
   content: string
 }
 
+// The two Q&A groups rendered as separate QaCards instances.
+type EntryGroup = 'anamnez' | 'exam'
+
 export default function HospitalWorkspace() {
   const [identity, setIdentity] = useState<HospitalIdentity>(EMPTY_IDENTITY)
   const [mode, setMode] = useState<HospitalMode>('hizli')
   const [segments, setSegments] = useState<SpeechSegment[]>([])
   const [entries, setEntries] = useState<HospitalEntry[] | null>(null)
+  const [examEntries, setExamEntries] = useState<HospitalEntry[] | null>(null)
+  // Extract entries dropped by the grounding gate — shown muted, never in output.
+  const [dropped, setDropped] = useState<HospitalExtractEntry[]>([])
+  const [insight, setInsight] = useState<HospitalInsightResult | null>(null)
+  const [insightState, setInsightState] = useState<InsightState>('idle')
   const [recorderState, setRecorderState] = useState<RecorderState>('idle')
   const [processing, setProcessing] = useState(false)
   const [confirmingReset, setConfirmingReset] = useState(false)
@@ -58,9 +72,19 @@ export default function HospitalWorkspace() {
     [rawTranscript, identity],
   )
 
+  // Medula text stays live with every keystroke in either group; the exam
+  // findings follow the anamnez as a separate paragraph.
+  const anamnezText = useMemo(() => buildMedulaText(entries ?? []), [entries])
+  const examText = useMemo(() => buildMedulaText(examEntries ?? []), [examEntries])
   const medulaText = useMemo(
-    () => buildMedulaText((entries ?? []).map((e) => e.answer)),
-    [entries],
+    () => [anamnezText, examText].filter(Boolean).join('\n\n'),
+    [anamnezText, examText],
+  )
+
+  // Deterministic "not asked" checklist — recomputed on every card edit.
+  const missingTopics = useMemo(
+    () => (entries === null ? [] : missingCriticalTopics(entries, mode)),
+    [entries, mode],
   )
 
   const handleSegment = useCallback((seg: TranscriptSegmentDTO) => {
@@ -83,9 +107,25 @@ export default function HospitalWorkspace() {
         return
       }
       const result = (await res.json()) as HospitalExtractResult
+      const exam = Array.isArray(result.exam_entries) ? result.exam_entries : []
       setEntries(result.entries.map((e) => ({ id: crypto.randomUUID(), ...e })))
-      if (result.entries.length === 0) {
+      setExamEntries(exam.map((e) => ({ id: crypto.randomUUID(), ...e })))
+      setDropped(Array.isArray(result.dropped) ? result.dropped : [])
+      // Stale insight from a previous extraction must not survive a re-process.
+      setInsight(null)
+      setInsightState('idle')
+      if (result.entries.length === 0 && exam.length === 0) {
         toast.warning('Konuşmada anamneze girecek bilgi bulunamadı.')
+      }
+      // Auto-generate the clinical insight from the fresh extraction
+      // (Q/A pairs only — identity never leaves this component).
+      const body: HospitalInsightBody = {
+        entries: result.entries.map(({ question, answer }) => ({ question, answer })),
+        exam_entries: exam.map(({ question, answer }) => ({ question, answer })),
+        mode,
+      }
+      if (body.entries.length > 0 || body.exam_entries.length > 0) {
+        void fetchInsight(body)
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Beklenmeyen hata.')
@@ -94,22 +134,95 @@ export default function HospitalWorkspace() {
     }
   }
 
-  function handleEntryChange(id: string, field: 'question' | 'answer', value: string) {
-    setEntries((prev) => prev?.map((e) => (e.id === id ? { ...e, [field]: value } : e)) ?? prev)
+  async function fetchInsight(body: HospitalInsightBody) {
+    setInsightState('loading')
+    try {
+      const res = await fetch('/api/hospital/insight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        toast.error((err as { error?: string }).error ?? `Klinik özet üretilemedi (${res.status})`)
+        setInsightState('error')
+        return
+      }
+      setInsight((await res.json()) as HospitalInsightResult)
+      setInsightState('done')
+    } catch {
+      toast.error('Klinik özet üretilemedi — bağlantınızı kontrol edin.')
+      setInsightState('error')
+    }
   }
 
-  function handleEntryDelete(id: string) {
-    setEntries((prev) => prev?.filter((e) => e.id !== id) ?? prev)
+  // "Yeniden Üret" uses the CURRENT (possibly edited) cards, not the raw extraction.
+  function handleInsightGenerate() {
+    const clean = (list: HospitalEntry[] | null) =>
+      (list ?? [])
+        .map(({ question, answer }) => ({ question: question.trim(), answer: answer.trim() }))
+        .filter((e) => e.question || e.answer)
+    const body: HospitalInsightBody = { entries: clean(entries), exam_entries: clean(examEntries), mode }
+    if (body.entries.length === 0 && body.exam_entries.length === 0) return
+    void fetchInsight(body)
   }
 
-  function handleEntryAdd() {
-    setEntries((prev) => [...(prev ?? []), { id: crypto.randomUUID(), question: '', answer: '' }])
+  function setGroupEntries(group: EntryGroup) {
+    return group === 'exam' ? setExamEntries : setEntries
+  }
+
+  function handleEntryChange(group: EntryGroup, id: string, field: 'question' | 'answer', value: string) {
+    setGroupEntries(group)((prev) =>
+      prev?.map((e) => (e.id === id ? { ...e, [field]: value } : e)) ?? prev,
+    )
+  }
+
+  function handleEntryDelete(group: EntryGroup, id: string) {
+    setGroupEntries(group)((prev) => prev?.filter((e) => e.id !== id) ?? prev)
+  }
+
+  function handleEntryAdd(group: EntryGroup, question = '') {
+    setGroupEntries(group)((prev) => [...(prev ?? []), { id: crypto.randomUUID(), question, answer: '' }])
+  }
+
+  // "Sorulmadı" chip → empty row with the topic heading, ready to fill in.
+  function handleMissingTopic(topic: CriticalTopic) {
+    handleEntryAdd('anamnez', topic.question)
+  }
+
+  // Complaint chip → append to the existing Şikâyet row, or create one. Works
+  // even before extraction (initializes the card list with a single row).
+  function handleComplaintChip(complaint: string) {
+    setEntries((prev) => {
+      const list = prev ?? []
+      const idx = list.findIndex((e) => {
+        const q = e.question.toLocaleLowerCase('tr-TR')
+        return q.includes('şikâyet') || q.includes('şikayet')
+      })
+      if (idx === -1) {
+        return [...list, { id: crypto.randomUUID(), question: 'Şikâyet', answer: complaint }]
+      }
+      const current = list[idx]
+      if (current.answer.toLocaleLowerCase('tr-TR').includes(complaint.toLocaleLowerCase('tr-TR'))) {
+        return list // already recorded — no duplicate
+      }
+      const trimmed = current.answer.trim().replace(/[.!?…,\s]+$/, '')
+      // Lowercase the first letter when appending mid-sentence.
+      const tail = complaint[0].toLocaleLowerCase('tr-TR') + complaint.slice(1)
+      const appended = trimmed ? `${trimmed}, ${tail}` : complaint
+      return list.map((e, i) => (i === idx ? { ...e, answer: appended } : e))
+    })
+    toast.success(`"${complaint}" Şikâyet satırına eklendi.`)
   }
 
   const resetAll = useCallback(() => {
     setIdentity(EMPTY_IDENTITY)
     setSegments([])
     setEntries(null)
+    setExamEntries(null)
+    setDropped([])
+    setInsight(null)
+    setInsightState('idle')
     setRecorderState('idle')
     setConfirmingReset(false)
     setWorkspaceKey((k) => k + 1)
@@ -129,7 +242,9 @@ export default function HospitalWorkspace() {
           year: 'numeric',
         }),
         modeLabel: HOSPITAL_MODE_LABELS[mode],
-        clinicalText: medulaText,
+        clinicalText: anamnezText,
+        examText,
+        summary: insightState === 'done' ? insight?.summary : undefined,
       })
       // Requirement: PDF closes the encounter — identity + transcript + output
       // are wiped so the next patient starts from a clean slate.
@@ -198,6 +313,31 @@ export default function HospitalWorkspace() {
             onSegment={handleSegment}
             onStateChange={setRecorderState}
           />
+          <p className="border-t border-border pt-3 text-xs leading-relaxed text-muted-foreground">
+            İpucu: Hastanın söylediklerini mikrofona kısaca tekrarlayın — nota ancak duyulanlar
+            yazılır.
+          </p>
+        </section>
+
+        {/* Quick complaint chips: the patient points instead of saying it —
+            one tap records the complaint without extra typing. */}
+        <section className="space-y-3 rounded-lg border border-border bg-card p-5">
+          <h2 className="text-sm font-semibold text-foreground">Sık Şikâyetler</h2>
+          <div className="flex flex-wrap gap-2">
+            {COMPLAINT_CHIPS[mode].map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => handleComplaintChip(c)}
+                className="rounded-full border border-input bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors outline-none hover:border-primary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Hasta söylemiyor, gösteriyorsa dokunun — Şikâyet satırına eklenir.
+          </p>
         </section>
 
         <section className="space-y-3 rounded-lg border border-border bg-card p-5">
@@ -272,12 +412,69 @@ export default function HospitalWorkspace() {
             açıkça geçen soru-cevaplar burada kart olarak belirir. Konuşulmayan başlık eklenmez.
           </div>
         ) : (
-          <QaCards
-            entries={entries}
-            onChange={handleEntryChange}
-            onDelete={handleEntryDelete}
-            onAdd={handleEntryAdd}
-          />
+          <>
+            {/* Deterministic "not asked" checklist — amber chips insert a
+                ready-to-fill row for the missing topic. */}
+            {missingTopics.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground">Sorulmadı:</span>
+                {missingTopics.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => handleMissingTopic(t)}
+                    title={`"${t.question}" başlıklı boş satır ekler`}
+                    className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs text-amber-800 transition-colors outline-none hover:bg-amber-100 focus-visible:ring-2 focus-visible:ring-ring dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20"
+                  >
+                    {t.label} sorulmadı
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <section className="space-y-3">
+              <h2 className="text-sm font-semibold text-foreground">Anamnez</h2>
+              <QaCards
+                entries={entries}
+                onChange={(id, field, value) => handleEntryChange('anamnez', id, field, value)}
+                onDelete={(id) => handleEntryDelete('anamnez', id)}
+                onAdd={() => handleEntryAdd('anamnez')}
+              />
+            </section>
+
+            <section className="space-y-3">
+              <h2 className="text-sm font-semibold text-foreground">Fizik Muayene</h2>
+              <QaCards
+                entries={examEntries ?? []}
+                onChange={(id, field, value) => handleEntryChange('exam', id, field, value)}
+                onDelete={(id) => handleEntryDelete('exam', id)}
+                onAdd={() => handleEntryAdd('exam')}
+              />
+            </section>
+
+            {/* Grounding drops: visible for trust, never enter Medula/PDF. */}
+            {dropped.length > 0 && (
+              <section className="space-y-2 rounded-lg border border-dashed border-border p-4 opacity-70">
+                <h3 className="text-xs font-semibold text-muted-foreground">
+                  Doğrulanamayan ifadeler (transkriptte bulunamadı, atlandı)
+                </h3>
+                <ul className="space-y-1 text-xs leading-relaxed text-muted-foreground">
+                  {dropped.map((d, i) => (
+                    <li key={i}>
+                      • {d.question}: {d.answer}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            <InsightCard
+              state={insightState}
+              insight={insight}
+              canGenerate={(entries?.length ?? 0) + (examEntries?.length ?? 0) > 0}
+              onGenerate={handleInsightGenerate}
+            />
+          </>
         )}
 
         <MedulaBox text={medulaText} />

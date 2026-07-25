@@ -1,7 +1,12 @@
 // Hospital module PDF: identity header (device-only data, injected client-side)
-// + the same flowing, heading-free clinical text shown in the Medula box.
+// + the same flowing clinical text shown in the Medula box (bare negative
+// answers keep their question heading — see src/lib/hospital/medula.ts).
+// Optional sections: FİZİK MUAYENE findings and the AI clinical summary.
+// NOTE: AI differentials and red flags are intentionally NOT printed — the PDF
+// is the official record (Medula); the differential list stays on screen only.
 
-import type { TDocumentDefinitions } from 'pdfmake/interfaces'
+import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces'
+import { AI_INSIGHT_DISCLAIMER } from '@/lib/hospital/types'
 
 export interface HospitalPdfData {
   fullName: string
@@ -10,11 +15,28 @@ export interface HospitalPdfData {
   dateStr: string // pre-formatted tr-TR string
   modeLabel: string
   clinicalText: string
+  examText?: string
+  summary?: string // AI clinical summary — printed WITH the fixed disclaimer
 }
 
 const BLUE = '#1e40af'
 
 export function buildHospitalDocDefinition(data: HospitalPdfData): TDocumentDefinitions {
+  const optionalSections: Content[] = []
+  if (data.examText) {
+    optionalSections.push(
+      { text: 'FİZİK MUAYENE', style: 'groupHeader' },
+      { text: data.examText, margin: [0, 2, 0, 8], lineHeight: 1.4 },
+    )
+  }
+  if (data.summary) {
+    optionalSections.push(
+      { text: 'KLİNİK ÖZET (YAPAY ZEKÂ)', style: 'groupHeader' },
+      { text: data.summary, margin: [0, 2, 0, 4], lineHeight: 1.4 },
+      { text: AI_INSIGHT_DISCLAIMER, fontSize: 7, color: '#999999', italics: true, margin: [0, 0, 0, 8] },
+    )
+  }
+
   return {
     pageSize: 'A4',
     pageMargins: [40, 50, 40, 50],
@@ -53,6 +75,7 @@ export function buildHospitalDocDefinition(data: HospitalPdfData): TDocumentDefi
         margin: [0, 2, 0, 8],
         lineHeight: 1.4,
       },
+      ...optionalSections,
     ],
     styles: {
       title: { fontSize: 16, bold: true },
