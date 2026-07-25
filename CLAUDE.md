@@ -2,8 +2,9 @@
 
 ## Project
 
-Hands-free dental anamnesis + charting web app for Turkish dental universities.
-Voice → Whisper STT → GPT-4o form fill + FDI tooth charts. Cross-contamination prevention.
+Hands-free anamnesis + charting web app for Turkish clinics — dental (persistent records)
+and hospital poliklinik/acil (ephemeral) modules. Voice → STT → GPT-4o form fill + FDI tooth charts.
+Cross-contamination prevention.
 
 See `.planning/PROJECT.md` for full context.
 
@@ -17,7 +18,14 @@ See `.planning/PROJECT.md` for full context.
 - Forward-compat: `clinic_id` nullable column reserved on patients/sessions for future grouping.
 - See `.planning/pivot/PIVOT-PLAN.md` for full pivot scope.
 
-Routes: `/dashboard`, `/patients`, `/patients/[id]`. APIs: `/api/patients/*`. Superadmin retained at `/superadmin` (user list + login audit + role assign).
+Routes: `/modules` (module picker), `/dashboard` (diş), `/hospital` (poliklinik/acil), `/patients`, `/patients/[id]`. APIs: `/api/patients/*`, `/api/sessions/*`, `/api/hospital/*`. Superadmin retained at `/superadmin` (user list + login audit + role assign).
+
+## Modules (v1.1)
+
+- **Diş** (`/dashboard`) — persistent patient records, 10-section structured anamnesis (Hacettepe), perio + pathology charts, medication cards, AI report, PDF export.
+- **Hastane** (`/hospital`) — fully ephemeral: no DB rows, identity (name/TC/phone) stays on device and is masked (`***`) in the transcript. Two modes: `hizli` (Acil — critical items only) / `detayli` (Poliklinik — comprehensive). Output: Medula-ready text + PDF, then full wipe.
+- **Terapist** — planned (disabled stub on `/modules`).
+- Module-level KVKK consent via `KvkkGate` (localStorage, text version v1 — still draft, legal review pending).
 
 **Workflow ekol:** ARAŞTIR → PLANLA → EXECUTE → REVIEW → NEXT. GSD slash-command'ları çağırma — token israfı.
 
@@ -69,12 +77,14 @@ These two skills are **mandatory** for every frontend phase before `/gsd-verify-
 | Framework | Next.js 15 App Router |
 | Database | Supabase PostgreSQL (Frankfurt eu-central-1) |
 | Auth | Clerk (flat users; Organizations deferred) |
-| STT | OpenAI Whisper API (`language: "tr"`) |
+| STT | OpenAI gpt-4o-mini-transcribe (`language: "tr"`, dental domain prompt) |
 | LLM | GPT-4o Structured Outputs |
 | Hosting | Vercel Pro (fra1 region) |
 | UI | shadcn/ui + Tailwind CSS v4 |
-| Realtime | SSE (server→client) + WebSocket (audio upload) |
-| Session state | Redis hot + Postgres cold |
+| PDF | pdfmake (`src/lib/pdf/`) |
+| Audio transport | POST multipart per chunk, pause-aware segmentation, 3 parallel uploads |
+| Realtime | SSE (server→client, replay/backup) + chunk POST response (instant render) |
+| Session state | Postgres (`sessions.recorder_state`) |
 
 ## Before any production deployment
 

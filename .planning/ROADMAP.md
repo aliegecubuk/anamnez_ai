@@ -1,22 +1,25 @@
 # AnamnezAl — Roadmap
 
-**Project:** Hands-free dental anamnesis + charting web application
-**Milestone:** v1
+**Project:** Hands-free anamnesis + charting web application (diş + hastane modülleri)
+**Milestone:** v1.1 complete (2026-07-25)
 **Granularity:** Standard
 **Coverage:** 55/55 v1 requirements mapped ✓
-**Last updated:** 2026-05-02
+**Last updated:** 2026-07-25
 
 ---
 
 ## Phases
 
-- [x] **Phase 1: Temel Altyapı** — Next.js 15 + Supabase (Frankfurt) + Clerk multi-tenant auth, RLS, KVKK baseline (4/4 plans complete)
-- [ ] **Phase 2: Hasta Yönetimi** — Patient profile CRUD, search, session shell, history view
-- [ ] **Phase 3: Ses Boru Hattı** — Browser mic → Whisper API (Turkish) → real-time transcript, Safari/Chrome compat
-- [ ] **Phase 4: Anamnez Motoru** — Admin form template UI + GPT-4o transcript→form mapping, missing-info alerts, KVKK/consent gates
-- [ ] **Phase 5: Dental AI Açıklamaları** — Click-to-expand dental-specific AI descriptions for meds/diseases/allergies
-- [ ] **Phase 6a: Periodontoloji Chartı** — FDI 32-tooth 6-point grid, voice fill, disambiguation, NULL≠0, review+save
-- [ ] **Phase 6b: Patoloji Chartı** — 32-tooth visual SVG chart, voice-driven condition highlighting, multi-condition, review
+- [x] **Phase 1: Temel Altyapı** — Next.js 15 + Supabase (Frankfurt) + Clerk auth, RLS, KVKK baseline (4/4 plans complete)
+- [x] **Phase 2: Hasta Yönetimi** — Patient profile CRUD, search, session shell, history view (4/4 plans complete)
+- [x] **Phase 3: Ses Boru Hattı** — Browser mic → Whisper API (Turkish) → real-time transcript, Safari/Chrome compat (4/4 plans complete)
+- [x] **Phase 4: Anamnez Motoru** — Admin form template UI + GPT-4o transcript→form mapping, missing-info alerts, KVKK/consent gates (4/4 plans complete)
+- [x] **Phase 5: Dental AI Açıklamaları** — Click-to-expand dental-specific AI descriptions for meds/diseases/allergies
+- [x] **Phase 6a: Periodontoloji Chartı** — FDI 32-tooth 6-point grid, voice fill, disambiguation, NULL≠0, review+save
+- [x] **Phase 6b: Patoloji Chartı** — 32-tooth visual SVG chart, voice-driven condition highlighting, multi-condition, review
+- [x] **Phase 7: Yapılandırılmış Anamnez + STT Latency (v1.1)** — 10 fixed sections (Hacettepe), medication cards, AI report, PDF export; pause-aware segmentation, parallel uploads, gpt-4o-mini-transcribe
+- [x] **Phase 8: Hastane Modülü (v1.1)** — Ephemeral poliklinik/acil anamnez: identity masking, hizli/detayli modes, Medula text + PDF, module picker + KvkkGate
+- [ ] **Phase 9: Terapist Modülü** — planned (stub "Yakında" on /modules)
 
 ---
 
@@ -47,10 +50,10 @@
   5. Dentist can select a patient and start a new session from their profile
 **Plans**: 4 plans
 Plans:
-- [ ] 02-01-PLAN.md — Supabase migration: patients + sessions tables with RLS
-- [ ] 02-02-PLAN.md — API routes: list/search patients, create patient, patient profile + sessions
-- [ ] 02-03-PLAN.md — Pnt list UI: search table + create patient dialog (Screen 1 + Screen 2)
-- [ ] 02-04-PLAN.md — Patient profile UI: header card + session history table (Screen 3)
+- [x] 02-01-PLAN.md — Supabase migration: patients + sessions tables with RLS
+- [x] 02-02-PLAN.md — API routes: list/search patients, create patient, patient profile + sessions
+- [x] 02-03-PLAN.md — Pnt list UI: search table + create patient dialog (Screen 1 + Screen 2)
+- [x] 02-04-PLAN.md — Patient profile UI: header card + session history table (Screen 3)
 **UI hint**: yes
 
 ### Phase 3: Ses Boru Hattı
@@ -68,7 +71,7 @@ Plans:
 - [x] 03-01-PLAN.md — DB migration: transcript_segments + sessions STT columns + shared types
 - [x] 03-02-PLAN.md — API routes: POST /sessions, POST /chunks (Whisper), PATCH /state, GET /transcript (SSE)
 - [x] 03-03-PLAN.md — Client recorder hook + RecordingPanel UI (MediaRecorder, chunk upload, live transcript)
-- [ ] 03-04-PLAN.md — Wire into patient profile + checkpoint human-verify
+- [x] 03-04-PLAN.md — Wire into patient profile + checkpoint human-verify
 
 ### Phase 4: Anamnez Motoru
 **Goal**: Admins can build form templates per department, and AI auto-fills the anamnesis form from the transcript — with alerts for missing answers and KVKK consent before saving
@@ -84,10 +87,10 @@ Plans:
   7. Session cannot be saved until KVKK data processing consent and informed consent checkboxes are checked
 **Plans**: 4 plans
 Plans:
-- [ ] 04-01-PLAN.md — DB migration: form_templates + immutable template_versions + template_questions + anamnesis_answers + session consent/template columns + shared types
-- [ ] 04-02-PLAN.md — Template CRUD API + admin builder UI (create/add/edit/reorder/delete questions, immutable publish snapshot)
-- [ ] 04-03-PLAN.md — GPT-4o mapping engine (TDD): dynamic structured-output schema, transcript→answers with confidence + proper-noun correction
-- [ ] 04-04-PLAN.md — Anamnesis UI: template picker, AI-fill review with confidence badges, manual edit, missing-field alerts + focus, KVKK/consent-gated save
+- [x] 04-01-PLAN.md — DB migration: form_templates + immutable template_versions + template_questions + anamnesis_answers + session consent/template columns + shared types
+- [x] 04-02-PLAN.md — Template CRUD API + admin builder UI (create/add/edit/reorder/delete questions, immutable publish snapshot)
+- [x] 04-03-PLAN.md — GPT-4o mapping engine (TDD): dynamic structured-output schema, transcript→answers with confidence + proper-noun correction
+- [x] 04-04-PLAN.md — Anamnesis UI: template picker, AI-fill review with confidence badges, manual edit, missing-field alerts + focus, KVKK/consent-gated save
 **UI hint**: yes
 
 ### Phase 5: Dental AI Açıklamaları
@@ -140,12 +143,19 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Temel Altyapı | 4/4 | Complete | 2026-05-02 |
-| 2. Hasta Yönetimi | 0/4 | In Progress | - |
-| 3. Ses Boru Hattı | 3/4 | In Progress | - |
-| 4. Anamnez Motoru | 4/4 | Complete (code; remote migration deferred — Supabase paused) | 2026-06-11 |
-| 5. Dental AI Açıklamaları | 0/? | Not started | - |
-| 6a. Periodontoloji Chartı | 0/? | Not started | - |
-| 6b. Patoloji Chartı | 0/? | Not started | - |
+| 2. Hasta Yönetimi | 4/4 | Complete | 2026-06-11 |
+| 3. Ses Boru Hattı | 4/4 | Complete | 2026-06-11 |
+| 4. Anamnez Motoru | 4/4 | Complete | 2026-06-11 |
+| 5. Dental AI Açıklamaları | ✓ | Complete | 2026-06-11 |
+| 6a. Periodontoloji Chartı | ✓ | Complete | 2026-06-11 |
+| 6b. Patoloji Chartı | ✓ | Complete | 2026-06-11 |
+| 7. Yapılandırılmış Anamnez + STT Latency | ✓ | Complete | 2026-07-25 |
+| 8. Hastane Modülü (poliklinik/acil) | ✓ | Complete | 2026-07-25 |
+
+**Note:** All 55 v1 requirements (AUTH/PAT/STT/TPLT/ANAM/DESC/PERIO/PATH/REVIEW) are
+implemented per the phase completions above. Remote Supabase migration of the
+2026-06-11 and 2026-07-02 batches is still pending (project paused) — see
+`.planning/STATE.md` pre-production checklist.
 
 ---
 
@@ -153,64 +163,65 @@ Plans:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
 | AUTH-03 | Phase 1 | Complete (01-03) |
 | AUTH-04 | Phase 1 | Complete (01-03, 01-04) |
 | AUTH-05 | Phase 1 | Complete (01-03, 01-04) |
 | AUTH-06 | Phase 1 | Complete (01-04) |
 | AUTH-07 | Phase 1 | Complete (01-02, 01-03) |
-| PAT-01 | Phase 2 | Planned (02-01, 02-02, 02-03) |
-| PAT-02 | Phase 2 | Planned (02-01, 02-02, 02-03) |
-| PAT-03 | Phase 2 | Planned (02-01, 02-02, 02-04) |
-| PAT-04 | Phase 2 | Planned (02-01, 02-02, 02-04) |
-| PAT-05 | Phase 2 | Planned (02-01, 02-02, 02-04) |
+| PAT-01 | Phase 2 | Complete (02-01, 02-02, 02-03) |
+| PAT-02 | Phase 2 | Complete (02-01, 02-02, 02-03) |
+| PAT-03 | Phase 2 | Complete (02-01, 02-02, 02-04) |
+| PAT-04 | Phase 2 | Complete (02-01, 02-02, 02-04) |
+| PAT-05 | Phase 2 | Complete (02-01, 02-02, 02-04) |
 | STT-01 | Phase 3 | Complete (03-03) |
 | STT-02 | Phase 3 | Complete (03-02) |
 | STT-03 | Phase 3 | Complete (03-03) |
 | STT-04 | Phase 3 | Complete (03-02, 03-03) |
 | STT-05 | Phase 3 | Complete (03-01, 03-02) |
 | STT-06 | Phase 3 | Complete (03-01, 03-03) |
-| TPLT-01 | Phase 4 | Planned (04-01, 04-02) |
-| TPLT-02 | Phase 4 | Planned (04-01, 04-02) |
-| TPLT-03 | Phase 4 | Planned (04-02) |
-| TPLT-04 | Phase 4 | Planned (04-01, 04-02) |
-| TPLT-05 | Phase 4 | Planned (04-04) |
-| ANAM-01 | Phase 4 | Planned (04-03, 04-04) |
-| ANAM-02 | Phase 4 | Planned (04-03, 04-04) |
-| ANAM-03 | Phase 4 | Planned (04-04) |
-| ANAM-04 | Phase 4 | Planned (04-04) |
-| ANAM-05 | Phase 4 | Planned (04-04) |
-| ANAM-06 | Phase 4 | Planned (04-01, 04-04) |
-| DESC-01 | Phase 5 | Pending |
-| DESC-02 | Phase 5 | Pending |
-| DESC-03 | Phase 5 | Pending |
-| DESC-04 | Phase 5 | Pending |
-| DESC-05 | Phase 5 | Pending |
-| DESC-06 | Phase 5 | Pending |
-| PERIO-01 | Phase 6a | Pending |
-| PERIO-02 | Phase 6a | Pending |
-| PERIO-03 | Phase 6a | Pending |
-| PERIO-04 | Phase 6a | Pending |
-| PERIO-05 | Phase 6a | Pending |
-| PERIO-06 | Phase 6a | Pending |
-| PERIO-07 | Phase 6a | Pending |
-| PERIO-08 | Phase 6a | Pending |
-| REVIEW-01 | Phase 6a | Pending |
-| REVIEW-02 | Phase 6a | Pending |
-| REVIEW-03 | Phase 6a | Pending |
-| REVIEW-04 | Phase 6a | Pending |
-| PATH-01 | Phase 6b | Pending |
-| PATH-02 | Phase 6b | Pending |
-| PATH-03 | Phase 6b | Pending |
-| PATH-04 | Phase 6b | Pending |
-| PATH-05 | Phase 6b | Pending |
-| PATH-06 | Phase 6b | Pending |
-| PATH-07 | Phase 6b | Pending |
-| REVIEW-05 | Phase 6b | Pending |
+| TPLT-01 | Phase 4 | Complete (04-01, 04-02) |
+| TPLT-02 | Phase 4 | Complete (04-01, 04-02) |
+| TPLT-03 | Phase 4 | Complete (04-02) |
+| TPLT-04 | Phase 4 | Complete (04-01, 04-02) |
+| TPLT-05 | Phase 4 | Complete (04-04) |
+| ANAM-01 | Phase 4 | Complete (04-03, 04-04) |
+| ANAM-02 | Phase 4 | Complete (04-03, 04-04) |
+| ANAM-03 | Phase 4 | Complete (04-04) |
+| ANAM-04 | Phase 4 | Complete (04-04) |
+| ANAM-05 | Phase 4 | Complete (04-04) |
+| ANAM-06 | Phase 4 | Complete (04-01, 04-04) |
+| DESC-01 | Phase 5 | Complete (05-01, 05-02, 05-03) |
+| DESC-02 | Phase 5 | Complete (05-01, 05-02) |
+| DESC-03 | Phase 5 | Complete (05-02) |
+| DESC-04 | Phase 5 | Complete (05-02) |
+| DESC-05 | Phase 5 | Complete (05-02, 05-03) |
+| DESC-06 | Phase 5 | Complete (05-01) |
+| PERIO-01 | Phase 6a | Complete |
+| PERIO-02 | Phase 6a | Complete |
+| PERIO-03 | Phase 6a | Complete |
+| PERIO-04 | Phase 6a | Complete |
+| PERIO-05 | Phase 6a | Complete |
+| PERIO-06 | Phase 6a | Complete |
+| PERIO-07 | Phase 6a | Complete |
+| PERIO-08 | Phase 6a | Complete |
+| REVIEW-01 | Phase 6a | Complete |
+| REVIEW-02 | Phase 6a | Complete |
+| REVIEW-03 | Phase 6a | Complete |
+| REVIEW-04 | Phase 6a | Complete |
+| PATH-01 | Phase 6b | Complete |
+| PATH-02 | Phase 6b | Complete |
+| PATH-03 | Phase 6b | Complete |
+| PATH-04 | Phase 6b | Complete |
+| PATH-05 | Phase 6b | Complete |
+| PATH-06 | Phase 6b | Complete |
+| PATH-07 | Phase 6b | Complete |
+| REVIEW-05 | Phase 6b | Complete |
 
-**Total v1 requirements:** 55 mapped across 7 phases ✓
+**Total v1 requirements:** 55 mapped across 7 phases ✓ — all complete (v1.0: 2026-06-11, v1.1: 2026-07-25)
 
 ---
+
 *Roadmap created: 2026-05-01*
-*Last updated: 2026-05-02 — Phase 2 plans finalized (4 plans)*
+*Last updated: 2026-07-25 — v1.1: structured anamnesis + STT latency + hospital module*
