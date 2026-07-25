@@ -25,6 +25,7 @@ const QUESTIONS: SnapshotQuestion[] = [
   }),
 ]
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRecord = Record<string, any>
 
 function answersProps(schema: AnyRecord): AnyRecord {

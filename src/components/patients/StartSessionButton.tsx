@@ -7,7 +7,6 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { pickSupportedMimeType } from '@/lib/sessions/codec'
 import type { CreateSessionBody, FormType } from '@/lib/sessions/types'
-import TemplatePicker from '@/components/sessions/TemplatePicker'
 
 interface Props {
   patientId: string
@@ -24,9 +23,7 @@ export default function StartSessionButton({
 }: Props) {
   const router = useRouter()
   const [pending, setPending] = useState(false)
-  const [pickerOpen, setPickerOpen] = useState(false)
 
-  // The dentist picks a template first (TPLT-05); versionId may be null (no AI form).
   async function createSession(templateVersionId: string | null) {
     if (pending) return
     setPending(true)
@@ -67,45 +64,26 @@ export default function StartSessionButton({
     }
   }
 
-  // Perio / pathology sessions need no template — go straight to recording.
-  const needsPicker = formType !== 'perio' && formType !== 'patoloji'
-
-  function handleClick() {
-    if (needsPicker) {
-      setPickerOpen(true)
-    } else {
-      void createSession(null)
-    }
-  }
-
+  // No template picker: anamnesis uses the fixed Özgeçmiş/Soygeçmiş section layout
+  // (StructuredAnamnesis), so every form type goes straight to the session screen.
   return (
-    <>
-      <Button
-        onClick={handleClick}
-        disabled={pending}
-        className={className}
-        title={title}
-      >
-        {pending ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Başlatılıyor...
-          </>
-        ) : (
-          <>
-            <Mic className="h-4 w-4" />
-            {title ?? 'Yeni Seans Başlat'}
-          </>
-        )}
-      </Button>
-
-      {needsPicker && (
-        <TemplatePicker
-          open={pickerOpen}
-          onOpenChange={setPickerOpen}
-          onSelect={(versionId) => void createSession(versionId)}
-        />
+    <Button
+      onClick={() => void createSession(null)}
+      disabled={pending}
+      className={className}
+      title={title}
+    >
+      {pending ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Başlatılıyor...
+        </>
+      ) : (
+        <>
+          <Mic className="h-4 w-4" />
+          {title ?? 'Yeni Seans Başlat'}
+        </>
       )}
-    </>
+    </Button>
   )
 }

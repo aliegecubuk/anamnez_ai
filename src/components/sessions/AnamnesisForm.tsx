@@ -55,7 +55,6 @@ export default function AnamnesisForm({
   patientId,
   questions,
   initialAnswers,
-  initialMissing,
 }: Props) {
   const router = useRouter()
   const orderedQuestions = useMemo(

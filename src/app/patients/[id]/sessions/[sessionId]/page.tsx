@@ -20,41 +20,51 @@ export default async function SessionPage({ params }: PageProps) {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
-  // Server-side fetch session row (ownership-checked) and transcript backlog.
-  const { data: session, error: sessionErr } = await supabaseAdmin
-    .from('sessions')
-    .select('id, patient_id, form_type, status, started_at, completed_at, audio_format, recorder_state, template_version_id')
-    .eq('id', sessionId)
-    .eq('user_id', userId)
-    .single<{
-      id: string
-      patient_id: string
-      form_type: string
-      status: 'draft' | 'completed'
-      started_at: string
-      completed_at: string | null
-      audio_format: AudioFormat | null
-      recorder_state: RecorderState
-      template_version_id: string | null
-    }>()
+  // All four lookups only need URL params — run them in one parallel batch instead
+  // of five serial Frankfurt roundtrips (was the dominant TTFB cost on this page).
+  const [
+    { data: session, error: sessionErr },
+    { data: patient },
+    { data: transcriptRows },
+    { data: answerRows },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from('sessions')
+      .select('id, patient_id, form_type, status, started_at, completed_at, audio_format, recorder_state, template_version_id')
+      .eq('id', sessionId)
+      .eq('user_id', userId)
+      .single<{
+        id: string
+        patient_id: string
+        form_type: string
+        status: 'draft' | 'completed'
+        started_at: string
+        completed_at: string | null
+        audio_format: AudioFormat | null
+        recorder_state: RecorderState
+        template_version_id: string | null
+      }>(),
+    supabaseAdmin
+      .from('patients')
+      .select('id, full_name')
+      .eq('id', patientId)
+      .eq('user_id', userId)
+      .single<{ id: string; full_name: string }>(),
+    supabaseAdmin
+      .from('transcript_segments')
+      .select('sequence, content, started_at, ended_at')
+      .eq('session_id', sessionId)
+      .eq('user_id', userId)
+      .order('sequence', { ascending: true }),
+    supabaseAdmin
+      .from('anamnesis_answers')
+      .select('question_id, prompt, question_type, answer_value, confidence, edited_by_human')
+      .eq('session_id', sessionId)
+      .eq('user_id', userId),
+  ])
 
   if (sessionErr || !session || session.patient_id !== patientId) notFound()
-
-  const { data: patient } = await supabaseAdmin
-    .from('patients')
-    .select('id, full_name')
-    .eq('id', patientId)
-    .eq('user_id', userId)
-    .single<{ id: string; full_name: string }>()
-
   if (!patient) notFound()
-
-  const { data: transcriptRows } = await supabaseAdmin
-    .from('transcript_segments')
-    .select('sequence, content, started_at, ended_at')
-    .eq('session_id', sessionId)
-    .eq('user_id', userId)
-    .order('sequence', { ascending: true })
 
   const transcript: TranscriptSegmentDTO[] = (transcriptRows ?? []) as TranscriptSegmentDTO[]
 
@@ -75,12 +85,6 @@ export default async function SessionPage({ params }: PageProps) {
       templateVersionQuestions = version.questions
         .slice()
         .sort((a, b) => a.position - b.position)
-
-      const { data: answerRows } = await supabaseAdmin
-        .from('anamnesis_answers')
-        .select('question_id, prompt, question_type, answer_value, confidence, edited_by_human')
-        .eq('session_id', sessionId)
-        .eq('user_id', userId)
 
       const byId = new Map(
         ((answerRows ?? []) as AnamnesisAnswerDTO[]).map((a) => [a.question_id, a]),
@@ -136,10 +140,12 @@ export default async function SessionPage({ params }: PageProps) {
       <SessionWorkspace
         sessionId={session.id}
         patientId={patient.id}
+        patientName={patient.full_name}
         formType={session.form_type}
         audioFormat={session.audio_format}
         recorderState={session.recorder_state}
         sessionStatus={session.status}
+        sessionStartedAt={session.started_at}
         initialTranscript={transcript}
         templateVersionQuestions={templateVersionQuestions}
         initialAnswers={initialAnswers}

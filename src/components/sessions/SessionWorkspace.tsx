@@ -1,9 +1,16 @@
 'use client'
 
+// Single-screen session workspace (competitor-parity layout):
+// mic controls + editable "Konuşma Girişi" sentence list + the form/chart are all
+// live at the same time — no "complete the session first" gate. The hekim records,
+// fixes sentences, hits "İşle ve Düzenle", edits values, exports PDF, in one place.
+
+import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import RecordingPanel from './RecordingPanel'
-import LiveTranscript from './LiveTranscript'
+import SpeechInputPanel from './SpeechInputPanel'
 import AnamnesisForm from './AnamnesisForm'
+import StructuredAnamnesis from './StructuredAnamnesis'
 import PerioGrid from './PerioGrid'
 import PathologyChart from './PathologyChart'
 import type { AudioFormat, RecorderState, TranscriptSegmentDTO } from '@/lib/sessions/types'
@@ -13,10 +20,12 @@ import type { SnapshotQuestion } from '@/lib/templates/types'
 interface Props {
   sessionId: string
   patientId: string
+  patientName: string
   formType: string
   audioFormat: AudioFormat | null
   recorderState: RecorderState
   sessionStatus: 'draft' | 'completed'
+  sessionStartedAt: string
   initialTranscript: TranscriptSegmentDTO[]
   templateVersionQuestions: SnapshotQuestion[] | null
   initialAnswers: AnamnesisAnswerDTO[]
@@ -26,67 +35,85 @@ interface Props {
 export default function SessionWorkspace({
   sessionId,
   patientId,
+  patientName,
   formType,
   audioFormat,
   recorderState,
   sessionStatus,
+  sessionStartedAt,
   initialTranscript,
   templateVersionQuestions,
   initialAnswers,
   initialMissing,
 }: Props) {
   const router = useRouter()
+  const [liveSegments, setLiveSegments] = useState<TranscriptSegmentDTO[]>([])
+  const [liveConnected, setLiveConnected] = useState<boolean | undefined>(undefined)
 
-  // Completed session OR session that finished recording — show static replay + chart.
-  if (sessionStatus === 'completed' || recorderState === 'completed') {
-    return (
-      <div className="space-y-10">
-        <section className="space-y-3">
-          <h2 className="text-base font-semibold">Transkript</h2>
-          <LiveTranscript segments={initialTranscript} connected={false} />
-        </section>
-        {formType === 'perio' && (
-          <PerioGrid sessionId={sessionId} patientId={patientId} />
-        )}
-        {formType === 'patoloji' && (
-          <PathologyChart sessionId={sessionId} />
-        )}
-        {formType !== 'perio' && formType !== 'patoloji' && templateVersionQuestions && templateVersionQuestions.length > 0 && (
-          <AnamnesisForm
-            sessionId={sessionId}
-            patientId={patientId}
-            questions={templateVersionQuestions}
-            initialAnswers={initialAnswers}
-            initialMissing={initialMissing}
-          />
-        )}
-      </div>
-    )
-  }
+  const handleSegmentsChange = useCallback(
+    (segments: TranscriptSegmentDTO[], connected: boolean) => {
+      setLiveSegments(segments)
+      setLiveConnected(connected)
+    },
+    [],
+  )
 
-  // Draft session that was never finished AND has no audio_format — broken row, do not render recorder.
-  if (!audioFormat) {
-    return (
-      <p className="text-sm text-destructive">
-        Bu seans geçerli bir ses formatı olmadan oluşturulmuş. Yeni bir seans başlatın.
-      </p>
-    )
-  }
+  const recorderActive =
+    sessionStatus !== 'completed' && recorderState !== 'completed' && !!audioFormat
 
   // MediaRecorder does not survive page loads (browser security model). Any server-side
   // 'recording' state means the recorder was destroyed — treat as 'idle' so the user
   // sees "Kaydı Başlat" and can start a fresh mic stream. Prior transcript segments are
   // durable; the server sequence counter picks up from where it left off.
-  // 'paused' is preserved so resumed sessions show "Devam Et" immediately on mount.
   const clientInitialState: RecorderState =
     recorderState === 'recording' ? 'idle' : recorderState
 
   return (
-    <RecordingPanel
-      sessionId={sessionId}
-      audioFormat={audioFormat}
-      initialRecorderState={clientInitialState}
-      onCompleted={() => router.push(`/patients/${patientId}`)}
-    />
+    <div className="space-y-8">
+      {recorderActive && (
+        <RecordingPanel
+          sessionId={sessionId}
+          audioFormat={audioFormat!}
+          initialRecorderState={clientInitialState}
+          onSegmentsChange={handleSegmentsChange}
+          onCompleted={() => router.refresh()}
+        />
+      )}
+
+      <SpeechInputPanel
+        sessionId={sessionId}
+        initialSegments={initialTranscript}
+        liveSegments={liveSegments}
+        connected={recorderActive ? liveConnected : undefined}
+      />
+
+      {formType === 'perio' && (
+        <PerioGrid
+          sessionId={sessionId}
+          patientId={patientId}
+          patientName={patientName}
+          sessionStartedAt={sessionStartedAt}
+        />
+      )}
+      {formType === 'patoloji' && (
+        <PathologyChart sessionId={sessionId} />
+      )}
+      {formType !== 'perio' && formType !== 'patoloji' && (
+        <StructuredAnamnesis
+          sessionId={sessionId}
+          patientName={patientName}
+          sessionStartedAt={sessionStartedAt}
+        />
+      )}
+      {formType !== 'perio' && formType !== 'patoloji' && templateVersionQuestions && templateVersionQuestions.length > 0 && (
+        <AnamnesisForm
+          sessionId={sessionId}
+          patientId={patientId}
+          questions={templateVersionQuestions}
+          initialAnswers={initialAnswers}
+          initialMissing={initialMissing}
+        />
+      )}
+    </div>
   )
 }
