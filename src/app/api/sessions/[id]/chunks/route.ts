@@ -40,13 +40,17 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     )
   }
 
-  // Confirm ownership + fetch audio_format from the session row.
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('id, audio_format, recorder_state')
-    .eq('id', sessionId)
-    .eq('user_id', userId)
-    .single<{ id: string; audio_format: AudioFormat | null; recorder_state: string }>()
+  // Ownership check and multipart parsing are independent — run them concurrently
+  // to shave a DB roundtrip off every chunk (this route is on the live STT hot path).
+  const [{ data: session }, form] = await Promise.all([
+    supabaseAdmin
+      .from('sessions')
+      .select('id, audio_format, recorder_state')
+      .eq('id', sessionId)
+      .eq('user_id', userId)
+      .single<{ id: string; audio_format: AudioFormat | null; recorder_state: string }>(),
+    req.formData(),
+  ])
 
   if (!session) {
     return NextResponse.json({ error: 'Seans bulunamadı.' }, { status: 404 })
@@ -58,8 +62,6 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: 'Tamamlanmış seansa parça eklenemez.' }, { status: 409 })
   }
 
-  // Parse multipart form-data
-  const form = await req.formData()
   const audio = form.get('audio')
   const sequenceRaw = form.get('sequence')
   const startedAt = form.get('started_at')

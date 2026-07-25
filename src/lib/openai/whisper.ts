@@ -44,13 +44,15 @@ function extensionFor(format: AudioFormat): string {
 /**
  * Transcribe a single audio chunk via OpenAI Whisper.
  * - language is hardcoded to 'tr' (STT-02 explicit requirement).
- * - Uses 'whisper-1' model — gpt-4o-transcribe is also valid but whisper-1 is the
- *   broadly-available stable endpoint as of 2026-05; swap is a one-line change.
+ * - Uses 'gpt-4o-mini-transcribe' — measurably lower latency than gpt-4o-transcribe
+ *   on short chunks with comparable Turkish accuracy; latency is the product
+ *   bottleneck (live dictation).
  * - Throws WhisperError on any failure; route handlers must catch and translate to HTTP.
  */
 export async function transcribeAudio(
   audio: Blob | ArrayBuffer | Uint8Array,
   format: AudioFormat,
+  opts?: { prompt?: string },
 ): Promise<string> {
   const ext = extensionFor(format)
 
@@ -75,9 +77,16 @@ export async function transcribeAudio(
   try {
     const result = await openai.audio.transcriptions.create({
       file,
-      model: 'gpt-4o-transcribe',
+      model: 'gpt-4o-mini-transcribe',
       language: 'tr',
       response_format: 'json',
+      // Domain bias: dental dictation by default; callers (e.g. hospital module)
+      // can override. Numbers as digits ("otuz altı" → 36) so the downstream
+      // perio parser gets unambiguous FDI tooth numbers.
+      prompt:
+        opts?.prompt ??
+        'Diş hekimliği kliniği diktesi: periodontal ölçüm ve anamnez. ' +
+          'Sayıları rakamla yaz (örn. 36, 22, 4 mm). FDI diş numaraları iki basamaklıdır: 11-18, 21-28, 31-38, 41-48.',
     })
     return result.text ?? ''
   } catch (err) {

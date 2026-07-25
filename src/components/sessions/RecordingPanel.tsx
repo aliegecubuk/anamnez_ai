@@ -1,20 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Mic, Pause, Play, Square, Loader2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import MicPermissionGate from './MicPermissionGate'
-import LiveTranscript from './LiveTranscript'
 import { useChunkedRecorder } from '@/hooks/useChunkedRecorder'
 import { useTranscriptStream } from '@/hooks/useTranscriptStream'
-import type { AudioFormat, RecorderState } from '@/lib/sessions/types'
+import type { AudioFormat, RecorderState, TranscriptSegmentDTO } from '@/lib/sessions/types'
 
 interface Props {
   sessionId: string
   audioFormat: AudioFormat
   initialRecorderState?: RecorderState   // W-5: forwarded into useChunkedRecorder
   onCompleted?: () => void
+  // Live transcript segments (chunk responses + SSE, deduped) — the parent renders
+  // them in SpeechInputPanel; this component is mic controls only.
+  onSegmentsChange?: (segments: TranscriptSegmentDTO[], connected: boolean) => void
 }
 
 /**
@@ -35,15 +37,39 @@ export default function RecordingPanel({
   audioFormat,
   initialRecorderState = 'idle',
   onCompleted,
+  onSegmentsChange,
 }: Props) {
   const [, setAutoStart] = useState(false)
+
+  // Segments returned directly by the chunk POST — rendered the instant the upload
+  // finishes. The SSE stream stays on as replay/backup (page reloads, other viewers);
+  // both sources are merged and deduped by sequence below.
+  const [localSegments, setLocalSegments] = useState<TranscriptSegmentDTO[]>([])
+  const handleSegment = useCallback((seg: TranscriptSegmentDTO) => {
+    setLocalSegments((prev) =>
+      prev.some((p) => p.sequence === seg.sequence) ? prev : [...prev, seg],
+    )
+  }, [])
+
   const recorder = useChunkedRecorder({
     sessionId,
     audioFormat,
     initialRecorderState,
     onError: (err) => toast.error(err.message),
+    onSegment: handleSegment,
   })
   const stream = useTranscriptStream({ sessionId, enabled: recorder.state !== 'completed' })
+
+  const segments = useMemo(() => {
+    const bySequence = new Map<number, TranscriptSegmentDTO>()
+    for (const s of stream.segments) bySequence.set(s.sequence, s)
+    for (const s of localSegments) bySequence.set(s.sequence, s)
+    return [...bySequence.values()].sort((a, b) => a.sequence - b.sequence)
+  }, [stream.segments, localSegments])
+
+  useEffect(() => {
+    onSegmentsChange?.(segments, stream.connected)
+  }, [segments, stream.connected, onSegmentsChange])
 
   useEffect(() => {
     if (recorder.state === 'completed') onCompleted?.()
@@ -148,9 +174,6 @@ export default function RecordingPanel({
             </span>
           )}
         </div>
-
-        {/* Live transcript */}
-        <LiveTranscript segments={stream.segments} connected={stream.connected} />
 
         {/* autoStart: convenience — immediately invokes start once permission granted, if user opted in.
             Currently we don't auto-start; user clicks "Kaydı Başlat". autoStart state reserved for

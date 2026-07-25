@@ -86,11 +86,12 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     )
   }
 
-  // When transitioning to 'completed', also stamp completed_at and status.
+  // When the recorder finishes, stamp completed_at but leave status='draft' —
+  // the sessions_consent_required_when_completed CHECK forbids status='completed'
+  // without consent flags; session finalization happens via POST /complete.
   const updates: Record<string, unknown> = { recorder_state: next }
   if (next === 'completed') {
     updates.completed_at = new Date().toISOString()
-    updates.status = 'completed'
   }
   if (droppedIncrement > 0) {
     updates.dropped_chunks = current.dropped_chunks + droppedIncrement

@@ -2,23 +2,42 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import type { AudioFormat, RecorderState } from '@/lib/sessions/types'
+import type { AudioFormat, RecorderState, TranscriptSegmentDTO } from '@/lib/sessions/types'
 
-const DEFAULT_CHUNK_MS = 5000
-const MAX_QUEUE_SIZE = 6
+// Pause-aware segmentation: a segment is cut when the speaker pauses (~0.7s of
+// silence) instead of on a fixed clock, so sentences stop getting chopped at
+// 3-4 words. MAX caps run-on speech; MIN prevents machine-gun tiny chunks.
+const DEFAULT_MAX_SEGMENT_MS = 8000
+const MIN_SEGMENT_MS = 1500
+const PAUSE_SILENCE_MS = 700
+const ROTATION_CHECK_MS = 100
+const MAX_QUEUE_SIZE = 10
 const MAX_CONSECUTIVE_FAILURES = 3
+// Concurrent chunk uploads. Whisper roundtrips (1-3s) used to serialize behind each
+// other and the transcript lagged further with every chunk; sequence numbers make
+// out-of-order completion safe (client + DB both order by sequence).
+const MAX_PARALLEL_UPLOADS = 3
 const UPLOAD_TIMEOUT_MS = 30_000
 // VAD: RMS threshold below which a chunk is treated as silence and skipped.
 // Web Audio getByteTimeDomainData values: 128=silence, ±127=max. Normalized to [-1,1].
-// Speech RMS ≈ 0.08–0.5; ambient noise ≈ 0.01–0.05.
-const VAD_RMS_THRESHOLD = 0.05
+// Speech RMS ≈ 0.08–0.5; ambient noise ≈ 0.01–0.05. 0.03 (was 0.05) so quiet mics
+// don't get real speech silently dropped — that read as "STT broken".
+const VAD_RMS_THRESHOLD = 0.03
 
 interface UseChunkedRecorderOptions {
-  sessionId: string
+  // Session-backed mode: chunks POST to /api/sessions/{id}/chunks and recorder
+  // state PATCHes to /api/sessions/{id}/state.
+  sessionId?: string
+  // Stateless mode (e.g. hospital module): chunks POST to this URL, no server
+  // state sync. Takes precedence over sessionId for the upload target.
+  chunkUrl?: string
   audioFormat: AudioFormat
-  chunkMs?: number
+  chunkMs?: number   // max segment length cap (pause detection usually cuts earlier)
   initialRecorderState?: RecorderState
   onError?: (err: Error) => void
+  // Fired with the transcribed segment as soon as the chunk POST returns —
+  // lets the recording client render text immediately instead of waiting for SSE.
+  onSegment?: (segment: TranscriptSegmentDTO) => void
 }
 
 interface UseChunkedRecorderResult {
@@ -43,10 +62,12 @@ interface QueuedChunk {
 export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedRecorderResult {
   const {
     sessionId,
+    chunkUrl,
     audioFormat,
-    chunkMs = DEFAULT_CHUNK_MS,
+    chunkMs: maxSegmentMs = DEFAULT_MAX_SEGMENT_MS,
     initialRecorderState = 'idle',
     onError,
+    onSegment,
   } = opts
 
   const [state, setState] = useState<RecorderState>(initialRecorderState)
@@ -68,9 +89,16 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
   const vadPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // Peak RMS seen during current segment — reset at segment start, checked at segment end.
   const segmentPeakRmsRef = useRef(0)
+  // Consecutive silence duration (ms) at the tail of the current segment — the
+  // rotation loop cuts the segment once this passes PAUSE_SILENCE_MS.
+  const silenceRunMsRef = useRef(0)
 
   const uploadQueueRef = useRef<QueuedChunk[]>([])
-  const processingRef = useRef(false)
+  const activeUploadsRef = useRef(0)
+  const drainWaitersRef = useRef<Array<() => void>>([])
+
+  const onSegmentRef = useRef(onSegment)
+  useEffect(() => { onSegmentRef.current = onSegment }, [onSegment])
 
   const stateRef = useRef<RecorderState>(initialRecorderState)
   useEffect(() => { stateRef.current = state }, [state])
@@ -83,10 +111,15 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
 
   const setServerState = useCallback(
     async (next: RecorderState) => {
+      // Stateless mode: no session row, nothing to sync.
+      if (!sessionId) return
+      // 8s hard cap — a wedged network request must never trap the recorder UI
+      // in a transitional state ("Sonlandırılıyor…" forever).
       const res = await fetch(`/api/sessions/${sessionId}/state`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ recorder_state: next }),
+        signal: AbortSignal.timeout(8000),
       })
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}))
@@ -112,7 +145,7 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
   }, [handleError, setServerState])
 
   const uploadChunk = useCallback(
-    async (blob: Blob, sequence: number, startedAt: Date, endedAt: Date): Promise<void> => {
+    async (blob: Blob, sequence: number, startedAt: Date, endedAt: Date): Promise<TranscriptSegmentDTO | null> => {
       if (blob.size > 24 * 1024 * 1024) {
         throw new Error('Ses parçası 24MB sınırını aşıyor.')
       }
@@ -128,7 +161,7 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
         const controller = new AbortController()
         const timer = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS)
         try {
-          const res = await fetch(`/api/sessions/${sessionId}/chunks`, {
+          const res = await fetch(chunkUrl ?? `/api/sessions/${sessionId}/chunks`, {
             method: 'POST',
             body: form,
             signal: controller.signal,
@@ -138,7 +171,7 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
             const errBody = await res.json().catch(() => ({}))
             throw new Error(errBody.error ?? `Chunk yüklenemedi (${res.status})`)
           }
-          return
+          return await res.json().catch(() => null) as TranscriptSegmentDTO | null
         } catch (err) {
           clearTimeout(timer)
           lastErr = err
@@ -147,36 +180,52 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
       }
       throw lastErr instanceof Error ? lastErr : new Error('Chunk yüklenemedi')
     },
-    [sessionId],
+    [chunkUrl, sessionId],
   )
 
-  const drainQueue = useCallback(async () => {
-    if (processingRef.current) return
-    processingRef.current = true
+  // Parallel drain: up to MAX_PARALLEL_UPLOADS chunks in flight. Whisper roundtrips
+  // no longer serialize behind each other; ordering is restored by `sequence`.
+  const pumpQueue = useCallback(() => {
+    while (
+      activeUploadsRef.current < MAX_PARALLEL_UPLOADS &&
+      uploadQueueRef.current.length > 0
+    ) {
+      const item = uploadQueueRef.current.shift()!
+      activeUploadsRef.current += 1
+      setPendingUploads(uploadQueueRef.current.length + activeUploadsRef.current)
 
-    while (uploadQueueRef.current.length > 0) {
-      const item = uploadQueueRef.current[0]
-      setPendingUploads(uploadQueueRef.current.length)
-      try {
-        await uploadChunk(item.blob, item.sequence, item.startedAt, item.endedAt)
-        uploadQueueRef.current.shift()
-        consecutiveFailuresRef.current = 0
-      } catch (err) {
-        uploadQueueRef.current.shift()
-        consecutiveFailuresRef.current += 1
-        handleError(err)
-        if (consecutiveFailuresRef.current >= MAX_CONSECUTIVE_FAILURES) {
-          processingRef.current = false
-          setPendingUploads(uploadQueueRef.current.length)
-          triggerAutoPause()
-          return
-        }
-      }
+      uploadChunk(item.blob, item.sequence, item.startedAt, item.endedAt)
+        .then((segment) => {
+          consecutiveFailuresRef.current = 0
+          // Instant transcript: render the segment now, don't wait for the SSE hop.
+          if (segment && segment.content) onSegmentRef.current?.(segment)
+        })
+        .catch((err) => {
+          consecutiveFailuresRef.current += 1
+          handleError(err)
+          if (consecutiveFailuresRef.current >= MAX_CONSECUTIVE_FAILURES) {
+            triggerAutoPause()
+          }
+        })
+        .finally(() => {
+          activeUploadsRef.current -= 1
+          setPendingUploads(uploadQueueRef.current.length + activeUploadsRef.current)
+          if (uploadQueueRef.current.length === 0 && activeUploadsRef.current === 0) {
+            drainWaitersRef.current.splice(0).forEach((resolve) => resolve())
+          } else {
+            pumpQueue()
+          }
+        })
     }
-
-    processingRef.current = false
-    setPendingUploads(0)
   }, [handleError, triggerAutoPause, uploadChunk])
+
+  // Resolves once the queue is empty AND no upload is in flight (used by stop()).
+  const waitForDrain = useCallback((): Promise<void> => {
+    if (uploadQueueRef.current.length === 0 && activeUploadsRef.current === 0) {
+      return Promise.resolve()
+    }
+    return new Promise<void>((resolve) => drainWaitersRef.current.push(resolve))
+  }, [])
 
   const enqueueChunk = useCallback((blob: Blob, sequence: number, startedAt: Date, endedAt: Date) => {
     if (uploadQueueRef.current.length >= MAX_QUEUE_SIZE) {
@@ -185,12 +234,13 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
       return
     }
     uploadQueueRef.current.push({ blob, sequence, startedAt, endedAt })
-    setPendingUploads(uploadQueueRef.current.length)
-    drainQueue()
-  }, [drainQueue, triggerAutoPause])
+    setPendingUploads(uploadQueueRef.current.length + activeUploadsRef.current)
+    pumpQueue()
+  }, [pumpQueue, triggerAutoPause])
 
   // Start VAD polling on the shared AudioContext/AnalyserNode.
-  // Measures RMS every 50ms and updates segmentPeakRmsRef.
+  // Measures RMS every 50ms: updates segmentPeakRmsRef (silence-skip gate) and
+  // silenceRunMsRef (pause-aware segmentation).
   const startVadPoll = useCallback(() => {
     if (vadPollRef.current) clearInterval(vadPollRef.current)
     const analyser = analyserRef.current
@@ -205,6 +255,7 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
       }
       const rms = Math.sqrt(sum / data.length)
       if (rms > segmentPeakRmsRef.current) segmentPeakRmsRef.current = rms
+      silenceRunMsRef.current = rms < VAD_RMS_THRESHOLD ? silenceRunMsRef.current + 50 : 0
     }, 50)
   }, [])
 
@@ -219,8 +270,9 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
     const recorder = new MediaRecorder(stream, { mimeType: audioFormat })
     recorderRef.current = recorder
     const segmentStart = segmentStartRef.current
-    // Reset peak RMS for this segment window.
+    // Reset VAD trackers for this segment window.
     segmentPeakRmsRef.current = 0
+    silenceRunMsRef.current = 0
     startVadPoll()
 
     recorder.ondataavailable = (event) => {
@@ -241,6 +293,34 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
     recorder.start()
   }, [audioFormat, enqueueChunk, handleError, startVadPoll, stopVadPoll])
 
+  // Pause-aware rotation: cut the segment when the speaker takes a breath
+  // (PAUSE_SILENCE_MS of tail silence after at least MIN_SEGMENT_MS), or at
+  // maxSegmentMs regardless — so sentences arrive whole, not chopped mid-word.
+  const startRotationLoop = useCallback((stream: MediaStream) => {
+    if (chunkIntervalRef.current) clearInterval(chunkIntervalRef.current)
+    chunkIntervalRef.current = setInterval(() => {
+      if (stateRef.current !== 'recording') return
+      const recorder = recorderRef.current
+      if (!recorder || recorder.state !== 'recording') return
+
+      const elapsed = Date.now() - segmentStartRef.current.getTime()
+      const hadSpeech = segmentPeakRmsRef.current >= VAD_RMS_THRESHOLD
+      const pausedNow = silenceRunMsRef.current >= PAUSE_SILENCE_MS
+      const shouldRotate =
+        elapsed >= maxSegmentMs ||
+        (elapsed >= MIN_SEGMENT_MS && hadSpeech && pausedNow)
+      if (!shouldRotate) return
+
+      recorder.addEventListener('stop', () => {
+        if (stateRef.current === 'recording') {
+          segmentStartRef.current = new Date()
+          startSegment(stream)
+        }
+      }, { once: true })
+      recorder.stop()
+    }, ROTATION_CHECK_MS)
+  }, [maxSegmentMs, startSegment])
+
   const start = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -248,7 +328,6 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
       sequenceRef.current = 0
       consecutiveFailuresRef.current = 0
       uploadQueueRef.current = []
-      processingRef.current = false
       setRetryRequired(false)
       segmentStartRef.current = new Date()
 
@@ -261,27 +340,14 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
       analyserRef.current = analyser
 
       startSegment(stream)
-
-      chunkIntervalRef.current = setInterval(() => {
-        if (stateRef.current !== 'recording') return
-        const prev = recorderRef.current
-        if (prev && prev.state === 'recording') {
-          prev.addEventListener('stop', () => {
-            if (stateRef.current === 'recording') {
-              segmentStartRef.current = new Date()
-              startSegment(stream)
-            }
-          }, { once: true })
-          prev.stop()
-        }
-      }, chunkMs)
+      startRotationLoop(stream)
 
       setState('recording')
     } catch (err) {
       handleError(err)
       throw err
     }
-  }, [chunkMs, handleError, startSegment])
+  }, [handleError, startSegment, startRotationLoop])
 
   const pause = useCallback(async () => {
     if (chunkIntervalRef.current) {
@@ -310,24 +376,11 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
     segmentStartRef.current = new Date()
 
     startSegment(stream)
-
-    chunkIntervalRef.current = setInterval(() => {
-      if (stateRef.current !== 'recording') return
-      const prev = recorderRef.current
-      if (prev && prev.state === 'recording') {
-        prev.addEventListener('stop', () => {
-          if (stateRef.current === 'recording') {
-            segmentStartRef.current = new Date()
-            startSegment(stream)
-          }
-        }, { once: true })
-        prev.stop()
-      }
-    }, chunkMs)
+    startRotationLoop(stream)
 
     setState('recording')
     await setServerState('recording').catch(handleError)
-  }, [chunkMs, handleError, setServerState, start, startSegment])
+  }, [handleError, setServerState, start, startSegment, startRotationLoop])
 
   const stop = useCallback(async () => {
     if (chunkIntervalRef.current) {
@@ -348,13 +401,22 @@ export function useChunkedRecorder(opts: UseChunkedRecorderOptions): UseChunkedR
     streamRef.current?.getTracks().forEach((t) => t.stop())
     streamRef.current = null
 
-    await drainQueue()
-
     setState('stopped')
-    await setServerState('stopped').catch(handleError)
+    pumpQueue()
+    // Bounded drain: give in-flight uploads 15s, then move on. A stuck upload
+    // must not keep the hekim staring at "Sonlandırılıyor…" — the transcript
+    // rows that made it are durable either way.
+    await Promise.race([
+      waitForDrain(),
+      new Promise<void>((resolve) => setTimeout(resolve, 15_000)),
+    ])
+
+    // FSM requires stopped → completed order; both calls are time-capped and
+    // non-blocking for the UI (completed state is set locally regardless).
+    await setServerState('stopped').catch(() => {})
+    await setServerState('completed').catch(() => {})
     setState('completed')
-    await setServerState('completed').catch(handleError)
-  }, [drainQueue, handleError, setServerState, stopVadPoll])
+  }, [pumpQueue, waitForDrain, setServerState, stopVadPoll])
 
   // B-2: flush on tab hide/close.
   useEffect(() => {
