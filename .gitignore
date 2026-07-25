@@ -43,6 +43,7 @@ next-env.d.ts
 
 # editor / agent local config
 .claude/
+.playwright-mcp/
 
 # windows shell artifacts (stderr leaks into literal "nul" file)
 /nul

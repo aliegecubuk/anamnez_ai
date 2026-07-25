@@ -3,14 +3,16 @@
 import { useSignIn, useUser, useClerk } from '@clerk/nextjs'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import AuthShell from '@/components/auth/AuthShell'
 
-export default function SignInPage() {
+// useSearchParams requires a Suspense boundary for static prerender —
+// the default export at the bottom wraps this in one.
+function SignInInner() {
   const { signIn, setActive, isLoaded } = useSignIn()
   const { isSignedIn, user } = useUser()
   const { signOut } = useClerk()
@@ -323,5 +325,13 @@ export default function SignInPage() {
         </div>
       </form>
     </AuthShell>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignInInner />
+    </Suspense>
   )
 }
