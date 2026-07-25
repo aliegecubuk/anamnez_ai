@@ -47,3 +47,10 @@ next-env.d.ts
 
 # windows shell artifacts (stderr leaks into literal "nul" file)
 /nul
+
+# eval harness reports
+evals/results/
+
+# playwright
+/test-results/
+/playwright-report/
