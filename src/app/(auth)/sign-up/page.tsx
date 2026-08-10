@@ -20,6 +20,7 @@ export default function SignUpPage() {
   const [code, setCode] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   function parseClerkError(err: unknown): { code: string | undefined; message: string | undefined } {
@@ -48,10 +49,17 @@ export default function SignUpPage() {
       const result = await signUp.create({ emailAddress: email, password })
 
       if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId })
-        // Push to '/'. Root page reads sessionStatus and routes pending → /sign-in/tasks.
-        router.push('/')
-        router.refresh()
+        setSuccess(true)
+        try {
+          await setActive({ session: result.createdSessionId })
+          // Full reload: guarantees the fresh session cookie is seen by the
+          // server on the next request (router.push can race Clerk's cookie).
+          window.location.assign('/')
+        } catch {
+          // Account exists in Clerk even if session activation failed —
+          // send the user to sign-in instead of leaving them stranded.
+          router.push('/sign-in')
+        }
         return
       }
 
@@ -69,6 +77,11 @@ export default function SignUpPage() {
       setError(`Beklenmeyen durum: ${result.status}`)
     } catch (err: unknown) {
       const { code, message } = parseClerkError(err)
+      if (code === 'session_exists') {
+        // Already signed in (e.g. double submit) — just go in.
+        window.location.assign('/')
+        return
+      }
       if (code === 'form_identifier_exists') {
         setError('Bu e-posta zaten kayıtlı. Giriş yapmayı dene.')
       } else if (code === 'form_password_pwned') {
@@ -92,9 +105,13 @@ export default function SignUpPage() {
     try {
       const result = await signUp.attemptEmailAddressVerification({ code })
       if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId })
-        router.push('/')
-        router.refresh()
+        setSuccess(true)
+        try {
+          await setActive({ session: result.createdSessionId })
+          window.location.assign('/')
+        } catch {
+          router.push('/sign-in')
+        }
         return
       }
       setError(`Beklenmeyen durum: ${result.status}`)
@@ -138,8 +155,8 @@ export default function SignUpPage() {
             <p className="text-sm text-destructive" role="alert" aria-live="polite">{error}</p>
           )}
 
-          <Button type="submit" disabled={isLoading || code.length < 6} className="w-full h-11 text-[15px]">
-            {isLoading ? 'Doğrulanıyor...' : 'Doğrula ve Devam Et'}
+          <Button type="submit" disabled={isLoading || success || code.length < 6} className="w-full h-11 text-[15px]">
+            {success ? 'Doğrulandı, yönlendiriliyorsun…' : isLoading ? 'Doğrulanıyor...' : 'Doğrula ve Devam Et'}
           </Button>
         </form>
       </AuthShell>
@@ -147,7 +164,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <AuthShell heading="Hadi başlayalım." subheading="Yeni hesap oluştur, ilk hastanı 30 saniyede ekle.">
+    <AuthShell heading="Hadi başlayalım." subheading="Yeni hesap oluştur, saniyeler içinde başla.">
       <form onSubmit={handleSignUp} className="space-y-5" noValidate>
         <div className="space-y-2">
           <Label htmlFor="email" className="text-[12px] font-medium text-muted-foreground uppercase tracking-[0.14em]">
@@ -198,8 +215,8 @@ export default function SignUpPage() {
           <p className="text-sm text-destructive" role="alert" aria-live="polite">{error}</p>
         )}
 
-        <Button type="submit" disabled={isLoading} className="w-full h-11 text-[15px]">
-          {isLoading ? 'Hesap oluşturuluyor...' : !isLoaded ? 'Yükleniyor...' : 'Hesap Oluştur'}
+        <Button type="submit" disabled={isLoading || success} className="w-full h-11 text-[15px]">
+          {success ? 'Hesap oluşturuldu, yönlendiriliyorsun…' : isLoading ? 'Hesap oluşturuluyor...' : !isLoaded ? 'Yükleniyor...' : 'Hesap Oluştur'}
         </Button>
         <div id="clerk-captcha" />
 
