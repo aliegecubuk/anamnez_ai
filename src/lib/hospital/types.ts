@@ -1,5 +1,7 @@
-// Hospital module — fully ephemeral: no DB rows, all state lives in the client.
-// Identity never leaves the device (masked out of transcripts, only embedded in the PDF).
+// Hospital module — identity and raw transcript stay client-only (masked out
+// of transcripts, identity only embedded in the PDF). The structured output
+// (Q&A + exam entries, Medula text, AI summary) can optionally be saved
+// server-side as a labeled snapshot with a time-boxed expiry — see records.ts.
 
 export type HospitalMode = 'hizli' | 'detayli'
 

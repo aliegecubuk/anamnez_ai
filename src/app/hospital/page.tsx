@@ -6,9 +6,9 @@ import TopBar from '@/components/app/TopBar'
 import KvkkGate from '@/components/consent/KvkkGate'
 import HospitalWorkspace from '@/components/hospital/HospitalWorkspace'
 
-// Hospital module: fully ephemeral voice → anamnesis tool for poliklinik/acil.
-// No patient records, no session rows — everything lives in the client and is
-// wiped after the PDF is downloaded.
+// Hospital module: voice → anamnesis tool for poliklinik/acil.
+// Identity + raw transcript stay on device; the structured output can
+// optionally be saved as a labeled, time-boxed record (HospitalHistory).
 export default async function HospitalPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
@@ -31,7 +31,8 @@ export default async function HospitalPage() {
           </h1>
           <p className="mt-3 max-w-[62ch] text-[15px] leading-relaxed text-muted-foreground">
             Hastayı dinle, yapay zekâ konuşulan soru-cevapları çıkarsın; düzelt, Medula&apos;ya
-            kopyala veya PDF al. Hiçbir veri kalıcı saklanmaz.
+            kopyala veya PDF al. Kimlik cihazında kalır; anamnez çıktısını dilersen etiketleyip
+            seçtiğin süre kadar saklayabilir, istediğinde silebilirsin.
           </p>
         </div>
 

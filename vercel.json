@@ -4,5 +4,6 @@
     "src/app/api/**": {
       "maxDuration": 30
     }
-  }
+  },
+  "crons": [{ "path": "/api/cron/hospital-purge", "schedule": "17 3 * * *" }]
 }

@@ -1,11 +1,22 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { FileDown, Loader2, RotateCcw, Sparkles } from 'lucide-react'
+import { FileDown, Loader2, RotateCcw, Save, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import IdentityPanel from './IdentityPanel'
 import HospitalRecordingPanel from './HospitalRecordingPanel'
+import HospitalHistory from './HospitalHistory'
 import QaCards from './QaCards'
 import MedulaBox from './MedulaBox'
 import InsightCard, { type InsightState } from './InsightCard'
@@ -51,6 +62,11 @@ export default function HospitalWorkspace() {
   const [processing, setProcessing] = useState(false)
   const [confirmingReset, setConfirmingReset] = useState(false)
   const [workspaceKey, setWorkspaceKey] = useState(0) // bump to hard-remount the recorder on reset
+  // Save-to-history flow: label dialog + refresh signal for HospitalHistory.
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
+  const [saveLabel, setSaveLabel] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
 
   const audioFormat = useMemo(() => {
     try {
@@ -228,6 +244,43 @@ export default function HospitalWorkspace() {
     setWorkspaceKey((k) => k + 1)
   }, [])
 
+  // Save the current (edited) output as a labeled record. Client-side entry
+  // ids are stripped; identity and transcript never leave this component.
+  async function handleSave() {
+    const label = saveLabel.trim()
+    if (!label || saving) return
+    setSaving(true)
+    try {
+      const strip = (list: HospitalEntry[] | null) =>
+        (list ?? []).map(({ question, answer }) => ({ question, answer }))
+      const res = await fetch('/api/hospital/records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          label,
+          mode,
+          entries: strip(entries),
+          exam_entries: strip(examEntries),
+          medula_text: medulaText,
+          ai_summary: insightState === 'done' ? (insight?.summary ?? null) : null,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        toast.error((err as { error?: string }).error ?? `Kayıt saklanamadı (${res.status})`)
+        return
+      }
+      toast.success('Kayıt saklandı — Geçmiş Kayıtlar bölümünde listelendi.')
+      setSaveDialogOpen(false)
+      setSaveLabel('')
+      setHistoryRefreshKey((k) => k + 1)
+    } catch {
+      toast.error('Kayıt saklanamadı — bağlantınızı kontrol edin.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function handlePdf() {
     if (!medulaText) return
     try {
@@ -276,9 +329,13 @@ export default function HospitalWorkspace() {
   }
 
   const busyRecording = recorderState === 'recording' || recorderState === 'paused'
+  const canSave = (entries?.length ?? 0) + (examEntries?.length ?? 0) > 0
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" key={workspaceKey}>
+    <div className="space-y-6">
+      <HospitalHistory refreshKey={historyRefreshKey} />
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" key={workspaceKey}>
       {/* Left: identity + mode + mic + live transcript */}
       <div className="space-y-6">
         <IdentityPanel identity={identity} onChange={setIdentity} />
@@ -391,6 +448,16 @@ export default function HospitalWorkspace() {
           >
             <FileDown className="h-4 w-4" /> PDF İndir
           </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="gap-2"
+            onClick={() => setSaveDialogOpen(true)}
+            disabled={!canSave}
+            title={canSave ? undefined : 'Kaydetmek için önce en az bir kart doldurun'}
+          >
+            <Save className="h-4 w-4" /> Kaydet
+          </Button>
           {confirmingReset ? (
             <span className="ml-auto inline-flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Tüm veriler silinsin mi?</span>
@@ -487,9 +554,69 @@ export default function HospitalWorkspace() {
         <MedulaBox text={medulaText} />
 
         <p className="text-xs leading-relaxed text-muted-foreground">
-          PDF indirildiğinde modül tamamen sıfırlanır: kimlik, konuşma ve çıktı silinir.
+          PDF indirildiğinde modül sıfırlanır: kimlik, konuşma ve çıktı bu ekrandan silinir;
+          Kaydet ile sakladığınız kayıtlar Geçmiş Kayıtlar bölümünde durur.
         </p>
       </div>
+      </div>
+
+      {/* Save dialog: the record is identified by this label only — no patient
+          identity is stored server-side. */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Kayıt Sakla</DialogTitle>
+            <DialogDescription>
+              Anamnez çıktısı seçtiğiniz saklama süresiyle saklanır. Kimlik ve konuşma metni
+              kaydedilmez — kaydı ayırt etmek için kısa bir etiket verin.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            className="space-y-4 py-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              void handleSave()
+            }}
+          >
+            <div className="space-y-1.5">
+              <Label htmlFor="record-label">Etiket</Label>
+              <Input
+                id="record-label"
+                value={saveLabel}
+                onChange={(e) => setSaveLabel(e.target.value)}
+                placeholder="Örn: 14:30 göğüs ağrısı"
+                maxLength={80}
+                autoFocus
+              />
+              <p className="text-right text-xs text-muted-foreground">
+                {saveLabel.trim().length}/80
+              </p>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setSaveDialogOpen(false)}
+                disabled={saving}
+              >
+                İptal
+              </Button>
+              <Button type="submit" disabled={!saveLabel.trim() || saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saklanıyor...
+                  </>
+                ) : (
+                  'Sakla'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -54,3 +54,5 @@ evals/results/
 # playwright
 /test-results/
 /playwright-report/
+
+.vercel

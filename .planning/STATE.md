@@ -14,6 +14,30 @@ progress:
 
 # AnamnezAl — Project State
 
+## ✅ v1.3 — Hastane: hasta geçmişi (etiketli, süreli kayıt) + güçlendirilmiş KVKK metni
+
+- **Geçmiş kayıtları** — workspace'teki düzenlenmiş Q&A kartları + fizik muayene + Medula metni +
+  AI özet, doktorun verdiği etiketle ("14:30 göğüs ağrısı") sunucuya kaydedilir; ham transkript,
+  ayırıcı tanılar ve PDF saklanmaz. Kimlik hâlâ cihazdan çıkmaz. Migration:
+  `20260810000001_hospital_records.sql` (`hospital_records` + `hospital_settings`, pivot RLS kalıbı).
+- **Saklama süresi** — 30/90/120/240/365 gün veya "otomatik silme yok"; kayıt anında kullanıcının
+  o anki ayarından `expires_at` hesaplanır (snapshot). Süre değişikliği yalnız yeni kayıtlara
+  uygulanır. Ayar yoksa varsayılan 365 gün.
+- **Silme** — lazy purge (`GET /api/hospital/records` başında) + günlük Vercel cron
+  (`/api/cron/hospital-purge`, `17 3 * * *`, Bearer `CRON_SECRET`); listeden manuel silme
+  iki aşamalı confirm'li.
+- **API** — GET/POST `/api/hospital/records`, DELETE `/api/hospital/records/[id]`,
+  GET/PUT `/api/hospital/settings` (hepsi Clerk `auth()` + user_id filtresi).
+- **UI** — workspace üstünde açılır `HospitalHistory` (liste + salt-okur detay + silme +
+  saklama süresi select'i); workspace'te "Kaydet" butonu + etiket dialog'u. PDF sonrası
+  sıfırlama davranışı aynen korunur.
+- **KVKK v2** — hastane metni modül bazlı ayrıldı ve güçlendirildi: veri sorumlusu
+  placeholder'ları, veri kategorileri, m.6/2 açık rıza, Supabase AB/Frankfurt + OpenAI ABD
+  aktarımı, saklama süresi, m.11 hakları + başvuru yöntemi. ⚠️ Metin hâlâ taslak — hukukçu
+  onayı açık madde (metinde görünür not var).
+- **Kapsam dışı (bilinçli)** — kaydı workspace'e geri yükleme, PDF arşivi, `dis` modülü KVKK
+  metninin yeniden yazımı.
+
 ## ✅ v1.2 COMPLETE — Saha feedback paketi (gerçek hastane testi)
 
 Gerçek bir hastanede benzer ürünün saha testinden gelen kritik feedback üzerine:
@@ -108,8 +132,8 @@ v1.0 (dental milestone) üzerine eklenenler, hepsi commit'lendi:
 | Perio chart | perio_charts + perio_measurements (immutable after status=saved; PATCH merges) |
 | Pathology chart | tooth_conditions (upsert on conflict) |
 | Disambiguation | <70% confidence → DisambiguationModal queue |
-| Hospital module | Fully ephemeral — no DB, identity stays on device, masked transcript |
-| Module consent | KvkkGate per module (dis/hastane), localStorage, text version v1 |
+| Hospital module | Identity + transcript ephemeral (device-only); structured output stored as labeled snapshot with chosen retention (30–365 gün veya manuel silme) |
+| Module consent | KvkkGate per module (dis/hastane), localStorage, text version v2 (hastane metni güçlendirildi) |
 
 ## Test Mode (active since 2026-05-07)
 
