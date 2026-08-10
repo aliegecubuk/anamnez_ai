@@ -32,12 +32,17 @@ Desteklenen durum türleri (condition_type değerleri):
 
 Kurallar:
 1. Sadece transkriptte belirtilen dişleri ve durumları doldur.
-2. ambiguous kuralları (PERIO-03 ile aynı mantık):
+2. Yazıyla söylenen sayıları rakama çevir: "yirmi üç" = 23, "otuz beş" = 35, "on altı" = 16.
+   Geçerli FDI aralığında açıkça söylenmiş bir numara (rakamla VEYA yazıyla) KESİN diş
+   numarasıdır — ASLA ambiguous yapma, doğrudan confirmed'a yaz.
+3. ambiguous kuralları (PERIO-03 ile aynı mantık):
    - "diş 8" gibi tek haneli → candidates: [18, 28, 38, 48]
    - Çeyrek belirsizse → ambiguous:true
    - confidence < 0.7 → ambiguous:true
-3. Bir dişte birden fazla durum olabilir — her durum için ayrı kayıt ekle.
-4. Kesinlikle emin olmadığın durumları uydurma.
+   - ambiguous:true olan her kayıtta candidates MUTLAKA dolu olmalı: en olası 2-4 dişi
+     tahmin edip yaz. Boş candidates listesi ASLA döndürme.
+4. Bir dişte birden fazla durum olabilir — her durum için ayrı kayıt ekle.
+5. Kesinlikle emin olmadığın durumları uydurma.
 
 JSON şemasına tam uyacak şekilde cevap ver.`
 

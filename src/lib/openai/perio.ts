@@ -22,13 +22,24 @@ FDI diş numaralandırması:
 - Sol alt: 31-38, Sağ alt: 41-48
 Geçerli diş numaraları: 11-18, 21-28, 31-38, 41-48
 
-Ölçüm noktaları: MB (mesiobukkal), B (bukkal), DB (distobukkal), ML (meziolingual), L (lingual), DL (distolingual)
+Ölçüm noktaları: MB (mesiobukkal), B (bukkal), DB (distobukkal), ML (mesiolingual), L (lingual), DL (distolingual)
+
+Yüzey eşlemesi (ÇOK ÖNEMLİ):
+- "Palatal" üst çenenin arka yüzüdür → ML/L/DL noktalarına yaz. ("Palatin" de aynı.)
+- "Lingual" alt çenenin arka yüzüdür → ML/L/DL noktalarına yaz.
+- "Bukkal", "fasial", "vestibül" ön yüzdür → MB/B/DB noktalarına yaz.
+- Hekim genelde önce ön (bukkal) üçlüyü, sonra arka (palatal/lingual) üçlüyü okur.
 
 Ölçüm türleri:
 - "cep" / "cep derinliği" / "sulkus derinliği" → pocket_depth (mm)
 - "ataşman kaybı" / "ataşman seviyesi" / "AL" → attachment_loss (mm)
 - "kanama" / "kanama var" / "BOP" → bleeding: true
 - "kanama yok" → bleeding: false
+
+Kanamanın noktaya atanması:
+- "mesialde kanama" → ön yüzde MB, arka yüzde ML.
+- "distalde kanama" → ön yüzde DB, arka yüzde DL.
+- Nokta belirtilmeden "kanama var" denirse, o diş için ölçüm bildirilen tüm noktalara bleeding: true işaretle; hiç ölçüm yoksa sadece B noktasına işaretle.
 
 Sayı çevirisi (ÇOK ÖNEMLİ):
 - Yazıyla söylenen sayıları rakama çevir: "otuz dört" = 34, "on altı" = 16, "yirmi iki" = 22, "kırk bir" = 41.
@@ -38,14 +49,15 @@ Sayı çevirisi (ÇOK ÖNEMLİ):
 
 Önemli kurallar:
 1. Sadece transkriptte açıkça belirtilen ölçümleri doldur. Belirtilmeyenler null olmalı (asla 0 koyma).
-2. Bir ölçüm sırası "üç iki üç" gibi verilirse sırasıyla MB/B/DB veya ML/L/DL olarak dağıt.
-3. Bağlam yoksa (sadece "bukkal" denmişse) MB/B/DB'ye dağıt.
-4. ambiguous SADECE şu durumlarda kullanılır (candidates listesiyle birlikte):
+2. Bir ölçüm sırası "üç iki üç" gibi tek üçlü verilirse sırasıyla MB/B/DB veya ML/L/DL olarak dağıt (yüzey bağlamına göre).
+3. Ardışık İKİ üçlü verilirse (örn. "beş altı beş, dört üç dört" veya "bukkal üç dört üç; palatal üç üç iki") İLK üçlü ön yüze (MB/B/DB), İKİNCİ üçlü arka yüze (ML/L/DL) dağıtılır. "Palatal/lingual" denerek verilen üçlü her zaman arka yüzedir.
+4. Bağlam yoksa (sadece "bukkal" denmişse) MB/B/DB'ye dağıt.
+5. ambiguous SADECE şu durumlarda kullanılır (candidates listesiyle birlikte):
    - "diş 8" gibi tek haneli ifadeler → candidates: [18, 28, 38, 48]
    - "birler", "ikiler" vb. çoğul diş grupları
    - Kadran gerçekten belirsizse
    Açıkça söylenmiş geçerli bir FDI numarasını ASLA ambiguous yapma.
-5. Kesinlikle emin olmadığın ölçümleri uydurma.
+6. Kesinlikle emin olmadığın ölçümleri uydurma.
 
 JSON şemasına tam uyacak şekilde cevap ver.`
 

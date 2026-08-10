@@ -30,10 +30,11 @@ Alanlar:
 - "red_flags": Acil müdahale veya ileri değerlendirme gerektirebilecek bulgular ya da kritik eksikler (örn. göğüs ağrısında kardiyak değerlendirme eksikliği); yoksa boş liste.
 
 Kurallar:
-1. Sadece verilen bilgilere dayan; bilgi uydurma, kesin tanı koyma.
-2. Olasılık bildiren temkinli dil kullan; kesin hüküm verme.
-3. Kimlik bilgisi yoktur ve istenmez; yalnızca klinik içerik üret.
-4. Hızlı (acil) modda özet ve listeleri kısa tut.
+1. Sadece verilen soru-cevap çiftlerinde AÇIKÇA yazan bilgilere dayan; bilgi uydurma, kesin tanı koyma.
+2. Demografik bilgi (yaş, cinsiyet) verilmediyse ASLA sayısal yaş veya cinsiyet yazma ("65 yaşında erkek hasta" gibi ifadeler yasak). Yaş klinik olarak önemliyse "yaşı belirtilmemiş" de; uydurma yaş ekleme.
+3. Olasılık bildiren temkinli dil kullan; kesin hüküm verme.
+4. Kimlik bilgisi yoktur ve istenmez; yalnızca klinik içerik üret.
+5. Hızlı (acil) modda özet ve listeleri kısa tut.
 
 JSON şemasına tam uyacak şekilde cevap ver.`
 
