@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Mic, Pause, Play, Square, Loader2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,8 @@ interface Props {
   audioFormat: AudioFormat
   onSegment: (segment: TranscriptSegmentDTO) => void
   onStateChange?: (state: RecorderState) => void
+  /** Extra action next to the record controls (e.g. "Yeni Kayıt Başlat"). */
+  trailing?: ReactNode
 }
 
 /**
@@ -21,7 +23,7 @@ interface Props {
  * /api/hospital/transcribe, segments come back in the POST response (no SSE,
  * no session row). The parent owns the segment list and wipes it on reset.
  */
-export default function HospitalRecordingPanel({ audioFormat, onSegment, onStateChange }: Props) {
+export default function HospitalRecordingPanel({ audioFormat, onSegment, onStateChange, trailing }: Props) {
   const [micDeviceId, setMicDeviceId] = useMicDevice()
   const recorder = useChunkedRecorder({
     chunkUrl: `/api/hospital/transcribe?format=${encodeURIComponent(audioFormat)}`,
@@ -124,6 +126,8 @@ export default function HospitalRecordingPanel({ audioFormat, onSegment, onState
               {recorder.pendingUploads} parça yükleniyor
             </span>
           )}
+
+          {trailing}
         </div>
       </div>
     </MicPermissionGate>

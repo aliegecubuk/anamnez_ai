@@ -67,6 +67,11 @@ export default function HospitalWorkspace() {
   const [saveLabel, setSaveLabel] = useState('')
   const [saving, setSaving] = useState(false)
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
+  // Direct Medula-box edits override the card-derived text (null = follow cards).
+  const [medulaOverride, setMedulaOverride] = useState<string | null>(null)
+  // Tracks a manual save in this encounter — PDF auto-saves only when the
+  // clinician has not saved yet.
+  const [savedOnce, setSavedOnce] = useState(false)
 
   const audioFormat = useMemo(() => {
     try {
@@ -92,10 +97,13 @@ export default function HospitalWorkspace() {
   // findings follow the anamnez as a separate paragraph.
   const anamnezText = useMemo(() => buildMedulaText(entries ?? []), [entries])
   const examText = useMemo(() => buildMedulaText(examEntries ?? []), [examEntries])
-  const medulaText = useMemo(
+  // Card edits keep the Medula text in sync — until the clinician types into
+  // the box directly; then the manual text wins (see medulaOverride).
+  const derivedMedulaText = useMemo(
     () => [anamnezText, examText].filter(Boolean).join('\n\n'),
     [anamnezText, examText],
   )
+  const medulaText = medulaOverride ?? derivedMedulaText
 
   // Deterministic "not asked" checklist — recomputed on every card edit.
   const missingTopics = useMemo(
@@ -130,6 +138,10 @@ export default function HospitalWorkspace() {
       // Stale insight from a previous extraction must not survive a re-process.
       setInsight(null)
       setInsightState('idle')
+      // Fresh extraction replaces any manual Medula edit and starts a new,
+      // unsaved encounter (PDF auto-save applies again).
+      setMedulaOverride(null)
+      setSavedOnce(false)
       if (result.entries.length === 0 && exam.length === 0) {
         toast.warning('Konuşmada anamneze girecek bilgi bulunamadı.')
       }
@@ -241,18 +253,17 @@ export default function HospitalWorkspace() {
     setInsightState('idle')
     setRecorderState('idle')
     setConfirmingReset(false)
+    setMedulaOverride(null)
+    setSavedOnce(false)
     setWorkspaceKey((k) => k + 1)
   }, [])
 
   // Save the current (edited) output as a labeled record. Client-side entry
   // ids are stripped; identity and transcript never leave this component.
-  async function handleSave() {
-    const label = saveLabel.trim()
-    if (!label || saving) return
-    setSaving(true)
+  async function saveRecord(label: string): Promise<boolean> {
+    const strip = (list: HospitalEntry[] | null) =>
+      (list ?? []).map(({ question, answer }) => ({ question, answer }))
     try {
-      const strip = (list: HospitalEntry[] | null) =>
-        (list ?? []).map(({ question, answer }) => ({ question, answer }))
       const res = await fetch('/api/hospital/records', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -268,17 +279,42 @@ export default function HospitalWorkspace() {
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         toast.error((err as { error?: string }).error ?? `Kayıt saklanamadı (${res.status})`)
-        return
+        return false
       }
-      toast.success('Kayıt saklandı — Geçmiş Kayıtlar bölümünde listelendi.')
-      setSaveDialogOpen(false)
-      setSaveLabel('')
       setHistoryRefreshKey((k) => k + 1)
+      return true
     } catch {
       toast.error('Kayıt saklanamadı — bağlantınızı kontrol edin.')
+      return false
+    }
+  }
+
+  async function handleSave() {
+    const label = saveLabel.trim()
+    if (!label || saving) return
+    setSaving(true)
+    try {
+      if (await saveRecord(label)) {
+        setSavedOnce(true)
+        toast.success('Kayıt saklandı — Geçmiş Kayıtlar bölümünde listelendi.')
+        setSaveDialogOpen(false)
+        setSaveLabel('')
+      }
     } finally {
       setSaving(false)
     }
+  }
+
+  // Label for the PDF auto-save flow: timestamp + mode, never identity.
+  function buildAutoLabel(): string {
+    const stamp = new Date().toLocaleString('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+    return `${stamp} · ${HOSPITAL_MODE_LABELS[mode]}`
   }
 
   async function handlePdf() {
@@ -295,14 +331,25 @@ export default function HospitalWorkspace() {
           year: 'numeric',
         }),
         modeLabel: HOSPITAL_MODE_LABELS[mode],
-        clinicalText: anamnezText,
-        examText,
+        // A direct Medula-box edit must reach the PDF too — send it as one
+        // clinical block instead of the card-derived anamnez/exam split.
+        clinicalText: medulaOverride ?? anamnezText,
+        examText: medulaOverride ? undefined : examText,
         summary: insightState === 'done' ? insight?.summary : undefined,
       })
-      // Requirement: PDF closes the encounter — identity + transcript + output
-      // are wiped so the next patient starts from a clean slate.
+      // PDF closes the encounter. If the clinician never hit Kaydet, auto-save
+      // the output under a generated label rather than silently discarding it —
+      // it can be deleted from Geçmiş Kayıtlar if unwanted.
+      let autoSaved = false
+      if (!savedOnce) {
+        autoSaved = await saveRecord(buildAutoLabel())
+      }
       resetAll()
-      toast.success('PDF indirildi — modül yeni hasta için sıfırlandı.')
+      toast.success(
+        autoSaved
+          ? 'PDF indirildi — çıktı otomatik olarak Geçmiş Kayıtlar\'a eklendi, modül sıfırlandı.'
+          : 'PDF indirildi — modül yeni hasta için sıfırlandı.',
+      )
     } catch (err) {
       // Surface the real error — a generic toast hides field reports.
       console.error('[hospital] PDF oluşturulamadı:', err)
@@ -329,7 +376,12 @@ export default function HospitalWorkspace() {
   }
 
   const busyRecording = recorderState === 'recording' || recorderState === 'paused'
-  const canSave = (entries?.length ?? 0) + (examEntries?.length ?? 0) > 0
+  // Save is possible with cards OR with text typed straight into the Medula box.
+  const canSave = (entries?.length ?? 0) + (examEntries?.length ?? 0) > 0 || medulaText.length > 0
+  // "Yeni Kayıt Başlat" sits next to the recorder controls once there is
+  // something to lose (replaces the old top-right "Sıfırla" button).
+  const canStartNew =
+    (segments.length > 0 || entries !== null) && !busyRecording && recorderState !== 'stopped'
 
   return (
     <div className="space-y-6">
@@ -371,6 +423,25 @@ export default function HospitalWorkspace() {
             audioFormat={audioFormat}
             onSegment={handleSegment}
             onStateChange={setRecorderState}
+            trailing={
+              canStartNew ? (
+                confirmingReset ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Tüm veriler silinsin mi?</span>
+                    <Button variant="destructive" size="sm" onClick={handleManualReset}>
+                      Evet, sıfırla
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setConfirmingReset(false)}>
+                      Vazgeç
+                    </Button>
+                  </span>
+                ) : (
+                  <Button variant="outline" className="gap-2" onClick={handleManualReset}>
+                    <RotateCcw className="h-4 w-4" /> Yeni Kayıt Başlat
+                  </Button>
+                )
+              ) : undefined
+            }
           />
           <p className="border-t border-border pt-3 text-xs leading-relaxed text-muted-foreground">
             İpucu: Hastanın söylediklerini mikrofona kısaca tekrarlayın — nota ancak duyulanlar
@@ -454,30 +525,10 @@ export default function HospitalWorkspace() {
             className="gap-2"
             onClick={() => setSaveDialogOpen(true)}
             disabled={!canSave}
-            title={canSave ? undefined : 'Kaydetmek için önce en az bir kart doldurun'}
+            title={canSave ? undefined : 'Kaydetmek için önce kart doldurun ya da Medula kutusuna yazın'}
           >
             <Save className="h-4 w-4" /> Kaydet
           </Button>
-          {confirmingReset ? (
-            <span className="ml-auto inline-flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Tüm veriler silinsin mi?</span>
-              <Button variant="destructive" size="sm" onClick={handleManualReset}>
-                Evet, sıfırla
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setConfirmingReset(false)}>
-                Vazgeç
-              </Button>
-            </span>
-          ) : (
-            <Button
-              variant="ghost"
-              size="lg"
-              className="ml-auto gap-2 text-muted-foreground"
-              onClick={handleManualReset}
-            >
-              <RotateCcw className="h-4 w-4" /> Sıfırla
-            </Button>
-          )}
         </div>
 
         {entries === null ? (
@@ -551,11 +602,11 @@ export default function HospitalWorkspace() {
           </>
         )}
 
-        <MedulaBox text={medulaText} />
+        <MedulaBox text={medulaText} onChange={setMedulaOverride} />
 
         <p className="text-xs leading-relaxed text-muted-foreground">
-          PDF indirildiğinde modül sıfırlanır: kimlik, konuşma ve çıktı bu ekrandan silinir;
-          Kaydet ile sakladığınız kayıtlar Geçmiş Kayıtlar bölümünde durur.
+          PDF indirildiğinde çıktı (elle kaydedilmediyse otomatik etiketle) Geçmiş Kayıtlar&apos;a
+          eklenir — dilerseniz oradan silebilirsiniz; kimlik, konuşma ve çıktı bu ekrandan silinir.
         </p>
       </div>
       </div>
