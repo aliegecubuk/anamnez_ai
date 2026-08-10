@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { FileDown, Loader2, RotateCcw, Save, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -69,9 +69,10 @@ export default function HospitalWorkspace() {
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
   // Direct Medula-box edits override the card-derived text (null = follow cards).
   const [medulaOverride, setMedulaOverride] = useState<string | null>(null)
-  // Tracks a manual save in this encounter — PDF auto-saves only when the
-  // clinician has not saved yet.
-  const [savedOnce, setSavedOnce] = useState(false)
+  // Fingerprint of the last saved output — PDF auto-save runs only when the
+  // content changed since the last save (manual or auto), so repeat downloads
+  // never create duplicate records.
+  const lastSavedSig = useRef<string | null>(null)
 
   const audioFormat = useMemo(() => {
     try {
@@ -141,7 +142,7 @@ export default function HospitalWorkspace() {
       // Fresh extraction replaces any manual Medula edit and starts a new,
       // unsaved encounter (PDF auto-save applies again).
       setMedulaOverride(null)
-      setSavedOnce(false)
+      lastSavedSig.current = null
       if (result.entries.length === 0 && exam.length === 0) {
         toast.warning('Konuşmada anamneze girecek bilgi bulunamadı.')
       }
@@ -254,9 +255,17 @@ export default function HospitalWorkspace() {
     setRecorderState('idle')
     setConfirmingReset(false)
     setMedulaOverride(null)
-    setSavedOnce(false)
+    lastSavedSig.current = null
     setWorkspaceKey((k) => k + 1)
   }, [])
+
+  // Content fingerprint — auto-save on PDF runs only when this changed since
+  // the last save, so repeat downloads never create duplicate records.
+  function currentSig(): string {
+    const strip = (list: HospitalEntry[] | null) =>
+      (list ?? []).map(({ question, answer }) => ({ question, answer }))
+    return JSON.stringify([strip(entries), strip(examEntries), medulaText, insight?.summary ?? null])
+  }
 
   // Save the current (edited) output as a labeled record. Client-side entry
   // ids are stripped; identity and transcript never leave this component.
@@ -281,6 +290,7 @@ export default function HospitalWorkspace() {
         toast.error((err as { error?: string }).error ?? `Kayıt saklanamadı (${res.status})`)
         return false
       }
+      lastSavedSig.current = currentSig()
       setHistoryRefreshKey((k) => k + 1)
       return true
     } catch {
@@ -295,7 +305,6 @@ export default function HospitalWorkspace() {
     setSaving(true)
     try {
       if (await saveRecord(label)) {
-        setSavedOnce(true)
         toast.success('Kayıt saklandı — Geçmiş Kayıtlar bölümünde listelendi.')
         setSaveDialogOpen(false)
         setSaveLabel('')
@@ -337,18 +346,17 @@ export default function HospitalWorkspace() {
         examText: medulaOverride ? undefined : examText,
         summary: insightState === 'done' ? insight?.summary : undefined,
       })
-      // PDF closes the encounter. If the clinician never hit Kaydet, auto-save
-      // the output under a generated label rather than silently discarding it —
-      // it can be deleted from Geçmiş Kayıtlar if unwanted.
+      // PDF no longer wipes the screen — the clinician keeps working and uses
+      // "Yeni Kayıt Başlat" for the next patient. Auto-save the output under a
+      // generated label whenever it changed since the last save.
       let autoSaved = false
-      if (!savedOnce) {
+      if (currentSig() !== lastSavedSig.current) {
         autoSaved = await saveRecord(buildAutoLabel())
       }
-      resetAll()
       toast.success(
         autoSaved
-          ? 'PDF indirildi — çıktı otomatik olarak Geçmiş Kayıtlar\'a eklendi, modül sıfırlandı.'
-          : 'PDF indirildi — modül yeni hasta için sıfırlandı.',
+          ? 'PDF indirildi — çıktı otomatik olarak Geçmiş Kayıtlar\'a eklendi.'
+          : 'PDF indirildi.',
       )
     } catch (err) {
       // Surface the real error — a generic toast hides field reports.
@@ -605,8 +613,8 @@ export default function HospitalWorkspace() {
         <MedulaBox text={medulaText} onChange={setMedulaOverride} />
 
         <p className="text-xs leading-relaxed text-muted-foreground">
-          PDF indirildiğinde çıktı (elle kaydedilmediyse otomatik etiketle) Geçmiş Kayıtlar&apos;a
-          eklenir — dilerseniz oradan silebilirsiniz; kimlik, konuşma ve çıktı bu ekrandan silinir.
+          PDF indirildiğinde çıktı (değiştiyse otomatik etiketle) Geçmiş Kayıtlar&apos;a eklenir;
+          ekran sıfırlanmaz — yeni hasta için &quot;Yeni Kayıt Başlat&quot;ı kullanın.
         </p>
       </div>
       </div>

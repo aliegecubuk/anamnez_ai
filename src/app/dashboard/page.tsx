@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import TopBar from '@/components/app/TopBar'
 import KvkkGate from '@/components/consent/KvkkGate'
@@ -55,6 +55,15 @@ export default async function DashboardPage() {
       <TopBar />
 
       <main className="mx-auto max-w-5xl px-6 py-14 lg:py-20">
+        <div className="mb-8">
+          <Link
+            href="/modules"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Modüller
+          </Link>
+        </div>
         <KvkkGate module="dis">
         {/* Greeting */}
         <section className="mb-16 lg:mb-20">
