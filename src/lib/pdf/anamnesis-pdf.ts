@@ -101,7 +101,11 @@ function reportContent(report: AiReportDTO | null): Content[] {
       ? []
       : [
           { text: title, style: 'sectionHeader' },
-          { ul: items, margin: [0, 2, 0, 8] },
+          // Copy the array: pdfmake mutates list nodes in place (adds _inlines,
+          // listMarker, positions...). `items` here is React state — passing it
+          // by reference would corrupt the next render ("Objects are not valid
+          // as a React child" crash right after the PDF download).
+          { ul: [...items], margin: [0, 2, 0, 8] },
         ]
 
   content.push(

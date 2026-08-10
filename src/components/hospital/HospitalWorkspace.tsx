@@ -250,8 +250,10 @@ export default function HospitalWorkspace() {
       // are wiped so the next patient starts from a clean slate.
       resetAll()
       toast.success('PDF indirildi — modül yeni hasta için sıfırlandı.')
-    } catch {
-      toast.error('PDF oluşturulamadı.')
+    } catch (err) {
+      // Surface the real error — a generic toast hides field reports.
+      console.error('[hospital] PDF oluşturulamadı:', err)
+      toast.error(`PDF oluşturulamadı: ${err instanceof Error ? err.message : 'bilinmeyen hata'}`)
     }
   }
 
@@ -381,6 +383,11 @@ export default function HospitalWorkspace() {
             className="gap-2"
             onClick={handlePdf}
             disabled={!medulaText}
+            title={
+              !medulaText
+                ? 'PDF için önce kaydı işleyin ya da en az bir kart doldurun (örn. Sık Şikâyetler)'
+                : undefined
+            }
           >
             <FileDown className="h-4 w-4" /> PDF İndir
           </Button>
