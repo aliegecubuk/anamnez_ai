@@ -426,7 +426,7 @@ export default function HospitalWorkspace() {
             trailing={
               canStartNew ? (
                 confirmingReset ? (
-                  <span className="inline-flex items-center gap-2">
+                  <span className="inline-flex basis-full flex-wrap items-center gap-2">
                     <span className="text-sm text-muted-foreground">Tüm veriler silinsin mi?</span>
                     <Button variant="destructive" size="sm" onClick={handleManualReset}>
                       Evet, sıfırla

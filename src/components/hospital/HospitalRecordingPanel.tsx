@@ -73,7 +73,7 @@ export default function HospitalRecordingPanel({ audioFormat, onSegment, onState
           disabled={recorder.state === 'recording' || recorder.state === 'paused' || recorder.state === 'stopped'}
         />
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {recorder.state === 'idle' && (
             <Button size="lg" className="gap-2" onClick={wrap(recorder.start)}>
               <Mic className="h-4 w-4" />
