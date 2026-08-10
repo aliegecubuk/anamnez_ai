@@ -6,6 +6,9 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',
   '/reset-password(.*)',
   '/api/webhooks/(.*)',
+  // Cron endpoints have no Clerk session — they authenticate via CRON_SECRET
+  // bearer token inside the route handler instead.
+  '/api/cron/(.*)',
 ])
 const isTasksRoute = createRouteMatcher(['/sign-in/tasks', '/sign-up/tasks'])
 const isSuperadminRoute = createRouteMatcher(['/superadmin(.*)'])
