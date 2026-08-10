@@ -73,10 +73,11 @@ v1.0 (dental milestone) üzerine eklenenler, hepsi commit'lendi:
 - [ ] VERBİS registration complete
 - [ ] OpenAI DPA signed
 - [ ] Supabase DPA signed (Pro plan)
-- [ ] Vercel functions pinned to `fra1` in `vercel.json`
+- [x] Vercel functions pinned to `fra1` in `vercel.json` — verified 2026-08-10 (`regions: ["fra1"]`, api maxDuration 30s)
 - [ ] KVKK + onam consent language reviewed by Turkish legal counsel (KvkkGate metni hâlâ taslak)
 - [ ] Cross-border transfer disclosure (OpenAI US) in consent form
-- [ ] E2E tests (Playwright) — `e2e/` currently empty; hospital + dental flows
+- [x] E2E tests (Playwright) — 6 smoke test + hospital gate flow; `npm run test:e2e` yeşil (2026-08-10)
+- [x] Deploy readiness check 2026-08-10 — build ✓, lint ✓, 178 unit test ✓, 6 e2e smoke ✓
 
 ## Phase Status
 
