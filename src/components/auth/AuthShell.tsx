@@ -25,7 +25,7 @@ export default function AuthShell({ children, heading, subheading }: Props) {
         <div className="space-y-7 max-w-[34ch]">
           <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground inline-flex items-center gap-3">
             <span aria-hidden className="inline-block h-px w-8 bg-primary" />
-            Sesli diş anamnezi
+            Sesli anamnez
           </p>
           <h2 className="font-display leading-[0.98] tracking-tight text-foreground text-[clamp(2.6rem,4.6vw,4.4rem)]">
             Sesin yeter.{' '}
@@ -34,8 +34,9 @@ export default function AuthShell({ children, heading, subheading }: Props) {
             </em>
           </h2>
           <p className="text-[15px] leading-relaxed text-muted-foreground max-w-[44ch]">
-            Diş hekimi konuşur, AnamnezAl dinler. Anamnez formu, periodontoloji ve patoloji
-            chartları hands-free dolar. Eldiven çıkarmak, kalem tutmak, ekrana dokunmak yok.
+            Hekim konuşur, AnamnezAl dinler. Diş kliniğinde anamnez formu, periodontoloji ve
+            patoloji chartları; hastanede poliklinik ve acil anamnezi hands-free dolar.
+            Eldiven çıkarmak, kalem tutmak, ekrana dokunmak yok.
           </p>
         </div>
 

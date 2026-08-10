@@ -18,8 +18,8 @@ const instrument = Instrument_Serif({
 })
 
 export const metadata: Metadata = {
-  title: 'AnamnezAl — Sesli Diş Anamnezi',
-  description: 'Diş hekimi konuşur, form kendini doldurur. Hands-free anamnez ve diş chartı.',
+  title: 'AnamnezAl — Sesli Anamnez',
+  description: 'Hekim konuşur, form kendini doldurur. Diş kliniği ve hastane (poliklinik/acil) için hands-free anamnez.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import { ArrowUpRight, Mic, Activity, Stethoscope } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import TopBar from '@/components/app/TopBar'
 import KvkkGate from '@/components/consent/KvkkGate'
@@ -102,28 +102,6 @@ export default async function DashboardPage() {
           </div>
         </Link>
 
-        {/* Coming-soon list */}
-        <section className="mt-14">
-          <p className="mb-6 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">Yakında</p>
-          <ul className="divide-y divide-border border-y border-border">
-            <ComingSoon
-              icon={<Mic className="h-4 w-4" />}
-              title="Sesli anamnez"
-              note="Whisper · Türkçe · gerçek zamanlı"
-            />
-            <ComingSoon
-              icon={<Activity className="h-4 w-4" />}
-              title="Periodontoloji chartı"
-              note="6 noktalı FDI · sesle doldurma"
-            />
-            <ComingSoon
-              icon={<Stethoscope className="h-4 w-4" />}
-              title="Patoloji chartı"
-              note="32 diş görsel · çoklu durum"
-            />
-          </ul>
-        </section>
-
         <footer className="mt-20 flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
           <span>KVKK uyumlu · Frankfurt eu-central-1</span>
           <span className="font-mono normal-case tracking-normal">v0.1 · test</span>
@@ -145,27 +123,5 @@ function StatRow({ label, value, hint }: { label: string; value: string; hint?: 
         </p>
       )}
     </div>
-  )
-}
-
-function ComingSoon({
-  icon,
-  title,
-  note,
-}: {
-  icon: React.ReactNode
-  title: string
-  note: string
-}) {
-  return (
-    <li className="flex items-center justify-between py-4">
-      <div className="flex items-center gap-4">
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-secondary text-muted-foreground">
-          {icon}
-        </span>
-        <span className="text-[15px] text-foreground">{title}</span>
-      </div>
-      <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{note}</span>
-    </li>
   )
 }
