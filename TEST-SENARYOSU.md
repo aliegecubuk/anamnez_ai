@@ -2,7 +2,7 @@
 
 > **Amaç:** Uygulamayı gerçek kullanıcı gözüyle baştan sona test etmek ve geri bildirim toplamak.
 > **Süre:** ~20–30 dakika · **Gereken:** Güncel Chrome veya Safari + çalışan bir mikrofon + internet
-> **Adres:** `<BURAYA-LINK-GELECEK>`
+> **Adres:** https://anamnezal.vercel.app
 > **Okuma metinleri:** Sesli testlerde okunacak hazır dikte metinleri `TEST-DEMO-METINLERI.md` dosyasında.
 
 Adımları sırayla uygulayın. Her adımın yanındaki **✓ Beklenen** kısmı, doğru çalışıyorsa görmeniz gerekeni söyler. Beklenenden farklı bir şey olursa en sondaki geri bildirim tablosuna not edin (mümkünse ekran görüntüsüyle).
