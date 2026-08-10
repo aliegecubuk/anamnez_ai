@@ -203,6 +203,8 @@ export default function PerioGrid({ sessionId, patientName, sessionStartedAt, on
 
   async function handleDisambiguationResolve(index: number, chosenTooth: number) {
     const entry = pendingAmbiguous.current[index]
+    // Consume the queue entry immediately — the modal is parent-controlled.
+    setAmbiguousQueue((q) => q.filter((e) => e.index !== index))
     if (!entry) return
     for (const [pt, vals] of Object.entries(entry.measurements)) {
       if (!vals) continue
@@ -212,6 +214,10 @@ export default function PerioGrid({ sessionId, patientName, sessionStartedAt, on
         bleeding: vals.bleeding ?? null,
       })
     }
+  }
+
+  function handleDisambiguationSkip(index: number) {
+    setAmbiguousQueue((q) => q.filter((e) => e.index !== index))
   }
 
   // Flatten the (possibly hand-edited) in-memory map for PDF export.
@@ -461,7 +467,7 @@ export default function PerioGrid({ sessionId, patientName, sessionStartedAt, on
       <DisambiguationModal
         entries={ambiguousQueue}
         onResolve={handleDisambiguationResolve}
-        onSkip={() => {}}
+        onSkip={handleDisambiguationSkip}
       />
     </section>
   )

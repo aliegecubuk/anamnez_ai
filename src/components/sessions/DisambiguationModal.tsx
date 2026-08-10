@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,25 +22,28 @@ interface Props {
   onSkip: (index: number) => void
 }
 
+// Fallback when the parser returns an ambiguous entry with no candidates
+// (model failed to list guesses): offer the full FDI set so the hekim can
+// always resolve instead of being forced to skip.
+const ALL_FDI_TEETH = [
+  11, 12, 13, 14, 15, 16, 17, 18,
+  21, 22, 23, 24, 25, 26, 27, 28,
+  31, 32, 33, 34, 35, 36, 37, 38,
+  41, 42, 43, 44, 45, 46, 47, 48,
+]
+
+// The queue is parent-controlled: every resolve/skip MUST remove the entry in
+// the parent, and the modal always shows entries[0]. Keeping progress in local
+// state broke whenever the parent re-rendered/unmounted the modal (the entry
+// came back forever — the infinite "Diş Numarası Belirsiz" loop).
 export default function DisambiguationModal({ entries, onResolve, onSkip }: Props) {
-  const [current, setCurrent] = useState(0)
-  const open = current < entries.length
-  const entry = entries[current]
+  const entry = entries[0]
+  if (!entry) return null
 
-  if (!open || !entry) return null
-
-  function handleChoice(tooth: number) {
-    onResolve(entry.index, tooth)
-    setCurrent((c) => c + 1)
-  }
-
-  function handleSkip() {
-    onSkip(entry.index)
-    setCurrent((c) => c + 1)
-  }
+  const candidates = entry.candidates.length > 0 ? entry.candidates : ALL_FDI_TEETH
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog open onOpenChange={() => {}}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
@@ -56,15 +58,20 @@ export default function DisambiguationModal({ entries, onResolve, onSkip }: Prop
 
         <div className="space-y-3 pt-2">
           <p className="text-sm text-muted-foreground">
-            {current + 1} / {entries.length} belirsiz ifade
+            {entries.length} belirsiz ifade kaldı
           </p>
+          {entry.candidates.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              Aday önerilemedi — doğru dişi listeden seçin.
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
-            {entry.candidates.map((tooth) => (
+            {candidates.map((tooth) => (
               <Button
                 key={tooth}
                 type="button"
                 variant="outline"
-                onClick={() => handleChoice(tooth)}
+                onClick={() => onResolve(entry.index, tooth)}
                 className="min-w-[52px]"
               >
                 Diş {tooth}
@@ -76,7 +83,7 @@ export default function DisambiguationModal({ entries, onResolve, onSkip }: Prop
             variant="ghost"
             size="sm"
             className="w-full text-muted-foreground"
-            onClick={handleSkip}
+            onClick={() => onSkip(entry.index)}
           >
             Bu ifadeyi atla
           </Button>

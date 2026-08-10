@@ -174,15 +174,22 @@ export default function PathologyChart({ sessionId }: Props) {
   const loadConditions = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/sessions/${sessionId}/pathology`)
-      if (!res.ok) { toast.error('Patoloji chart yüklenemedi.'); return }
-      const data = (await res.json()) as { conditions: ToothConditionDTO[] }
-      setConditions(data.conditions)
-      setCondMap(buildCondMap(data.conditions))
+      await refetchConditions()
     } finally {
       setLoading(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId])
+
+  // Silent refetch — no loading spinner, no unmount of the chart/modal subtree.
+  // Used after mutations so the disambiguation queue survives the refresh.
+  async function refetchConditions() {
+    const res = await fetch(`/api/sessions/${sessionId}/pathology`)
+    if (!res.ok) { toast.error('Patoloji chart yüklenemedi.'); return }
+    const data = (await res.json()) as { conditions: ToothConditionDTO[] }
+    setConditions(data.conditions)
+    setCondMap(buildCondMap(data.conditions))
+  }
 
   useEffect(() => { void loadConditions() }, [loadConditions])
 
@@ -237,13 +244,20 @@ export default function PathologyChart({ sessionId }: Props) {
 
   async function handleDisambiguationResolve(index: number, chosenTooth: number) {
     const entry = pendingAmbiguous.current[index]
+    // Consume the queue entry immediately — the modal is parent-controlled.
+    setAmbiguousQueue((q) => q.filter((e) => e.index !== index))
     if (!entry) return
-    await fetch(`/api/sessions/${sessionId}/pathology`, {
+    const res = await fetch(`/api/sessions/${sessionId}/pathology`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tooth_number: chosenTooth, condition_type: entry.condition_type }),
     })
-    await loadConditions()
+    if (!res.ok) { toast.error('Durum kaydedilemedi.'); return }
+    await refetchConditions()
+  }
+
+  function handleDisambiguationSkip(index: number) {
+    setAmbiguousQueue((q) => q.filter((e) => e.index !== index))
   }
 
   if (loading) {
@@ -314,7 +328,7 @@ export default function PathologyChart({ sessionId }: Props) {
       <DisambiguationModal
         entries={ambiguousQueue}
         onResolve={handleDisambiguationResolve}
-        onSkip={() => {}}
+        onSkip={handleDisambiguationSkip}
       />
     </section>
   )
